@@ -1,0 +1,31 @@
+# 数据集 & 大文件
+2.Model/Data/data/
+2.Model/Data/data (1).zip
+2.Model.zip
+
+# 模型权重 (超过 GitHub 100MB 限制，需单独下载或 Git LFS)
+2.Model/Weights/convnext_tiny_best.pth
+
+# 上传图片 & 历史记录
+3.Web/Backend/uploads/*
+3.Web/Backend/logs/history.json
+!3.Web/Backend/uploads/.gitkeep
+!3.Web/Backend/logs/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.tmp

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>农作物病虫害诊断系统</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: #f0f4f0; min-height: 100vh; color: #333;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1b5e20, #2e7d32);
+            color: #fff; padding: 24px 0 0; text-align: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,.12);
+        }
+        .header h1 { font-size: 26px; font-weight: 700; letter-spacing: 2px; }
+        .header p { font-size: 13px; opacity: .8; margin: 6px 0 18px; }
+
+        /* Tabs */
+        .tabs { display: flex; justify-content: center; gap: 0; }
+        .tab-btn {
+            padding: 12px 32px; border: none; background: rgba(255,255,255,.12);
+            color: rgba(255,255,255,.75); font-size: 15px; cursor: pointer;
+            border-radius: 8px 8px 0 0; transition: .2s; margin: 0 2px;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,.2); }
+        .tab-btn.active { background: #f0f4f0; color: #1b5e20; font-weight: 700; }
+
+        /* Container */
+        .container { max-width: 780px; margin: 24px auto; padding: 0 16px 48px; }
+
+        /* Cards */
+        .card {
+            background: #fff; border-radius: 12px; padding: 28px;
+            box-shadow: 0 1px 8px rgba(0,0,0,.04); margin-bottom: 20px;
+        }
+        .card-title { font-size: 17px; font-weight: 700; margin-bottom: 18px; color: #2e7d32; }
+
+        /* Upload */
+        .upload-zone {
+            border: 2px dashed #c8e6c9; border-radius: 10px; padding: 44px 20px;
+            text-align: center; cursor: pointer; transition: .3s; background: #fafff5;
+        }
+        .upload-zone:hover, .upload-zone.dragover { border-color: #4caf50; background: #edf7e7; }
+        .upload-zone .icon { font-size: 44px; margin-bottom: 10px; }
+        .upload-zone .hint { color: #999; font-size: 13px; margin-top: 6px; }
+        .upload-zone img { max-width: 100%; max-height: 260px; border-radius: 8px; }
+
+        /* Buttons */
+        .btn {
+            display: block; width: 100%; padding: 13px; border: none; border-radius: 8px;
+            font-size: 15px; font-weight: 600; cursor: pointer; transition: .25s; margin-top: 14px;
+        }
+        .btn-primary { background: #2e7d32; color: #fff; }
+        .btn-primary:hover { background: #1b5e20; }
+        .btn-primary:disabled { background: #b9dbbc; cursor: not-allowed; }
+        .btn-outline { background: #fff; color: #666; border: 1px solid #ddd; margin-top: 10px; }
+        .btn-outline:hover { background: #f5f5f5; }
+        .btn-sm { display: inline-block; width: auto; padding: 6px 14px; font-size: 12px; margin: 0; }
+
+        /* Result */
+        .result-hero {
+            display: flex; align-items: center; gap: 20px; padding: 22px;
+            background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+            border-radius: 12px; margin-bottom: 16px;
+        }
+        .result-label { font-size: 20px; font-weight: 700; color: #1b5e20; }
+        .result-crop { font-size: 13px; color: #558b2f; margin-bottom: 2px; }
+        .result-score { font-size: 42px; font-weight: 800; color: #1b5e20; line-height: 1; }
+        .result-score-sub { font-size: 13px; color: #888; }
+        .conf-bar { height: 8px; background: #c8e6c9; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+        .conf-bar-fill { height: 100%; border-radius: 4px; transition: width 1s; }
+
+        .conf-high { background: #2e7d32; }
+        .conf-mid { background: #f9a825; }
+        .conf-low { background: #e53935; }
+
+        /* Top3 */
+        .top3-list { margin-top: 18px; }
+        .top3-row {
+            display: flex; align-items: center; padding: 10px 14px;
+            border-radius: 8px; margin-bottom: 8px; gap: 12px; background: #fafafa;
+        }
+        .top3-row.best { background: #e8f5e9; }
+        .top3-rank {
+            width: 26px; height: 26px; border-radius: 50%; font-size: 12px;
+            font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .rank-1 { background: #2e7d32; } .rank-2 { background: #81c784; } .rank-3 { background: #a5d6a7; }
+        .top3-name { flex: 1; font-size: 14px; }
+        .top3-name small { display: block; font-size: 11px; color: #999; }
+        .top3-pct { font-weight: 700; font-size: 15px; color: #2e7d32; }
+
+        /* History */
+        .history-item {
+            display: flex; align-items: center; gap: 14px; padding: 14px;
+            border-bottom: 1px solid #f0f0f0; transition: .2s;
+        }
+        .history-item:hover { background: #f9fbe7; }
+        .history-thumb {
+            width: 64px; height: 64px; object-fit: cover; border-radius: 8px;
+            flex-shrink: 0; background: #e0e0e0;
+        }
+        .history-info { flex: 1; min-width: 0; }
+        .history-label { font-size: 15px; font-weight: 600; }
+        .history-meta { font-size: 12px; color: #999; margin-top: 2px; }
+        .history-score { font-weight: 700; font-size: 16px; color: #2e7d32; white-space: nowrap; }
+        .history-empty { text-align: center; padding: 48px; color: #aaa; }
+
+        /* Stats */
+        .stat-summary { display: flex; gap: 16px; margin-bottom: 20px; }
+        .stat-box {
+            flex: 1; text-align: center; padding: 18px; background: #e8f5e9;
+            border-radius: 10px;
+        }
+        .stat-box .num { font-size: 28px; font-weight: 800; color: #1b5e20; }
+        .stat-box .txt { font-size: 12px; color: #666; margin-top: 4px; }
+        .chart-wrap { width: 100%; height: 380px; }
+
+        /* Loading */
+        .loading { text-align: center; padding: 32px; }
+        .spinner {
+            width: 36px; height: 36px; border: 4px solid #c8e6c9;
+            border-top-color: #2e7d32; border-radius: 50%; animation: spin .7s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error { color: #c62828; background: #ffebee; padding: 12px 16px; border-radius: 8px; margin-top: 12px; }
+        .clear-btn { text-align: right; margin-bottom: 12px; }
+
+        @media (max-width: 600px) {
+            .result-hero { flex-direction: column; text-align: center; }
+            .stat-summary { flex-direction: column; }
+            .tab-btn { padding: 10px 18px; font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div class="header">
+        <h1>🌾 农作物病虫害智能诊断</h1>
+        <p>上传叶片图片 · 自动识别病害 · AI 辅助决策</p>
+        <div class="tabs">
+            <button class="tab-btn" :class="{ active: tab === 'diagnose' }" @click="tab='diagnose'">🔍 智能诊断</button>
+            <button class="tab-btn" :class="{ active: tab === 'history' }" @click="switchHistory">📋 历史记录</button>
+            <button class="tab-btn" :class="{ active: tab === 'stats' }" @click="switchStats">📊 数据统计</button>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- ========== 诊断页 ========== -->
+        <div v-if="tab === 'diagnose'">
+            <div class="card">
+                <div class="card-title">📷 上传叶片图片</div>
+                <div class="upload-zone"
+                     :class="{ dragover: dragging }"
+                     @click="$refs.fileInput.click()"
+                     @dragover.prevent="dragging=true"
+                     @dragleave.prevent="dragging=false"
+                     @drop.prevent="handleDrop">
+                    <div v-if="!previewUrl">
+                        <div class="icon">🍃</div>
+                        <div>点击上传或拖拽图片到此处</div>
+                        <div class="hint">支持 JPG / PNG，建议叶片主体清晰</div>
+                    </div>
+                    <img v-else :src="previewUrl" alt="预览">
+                </div>
+                <input type="file" ref="fileInput" accept="image/*" hidden @change="handleFile">
+
+                <button class="btn btn-primary" :disabled="!file || loading" @click="submit">
+                    {{ loading ? '⏳ 识别中...' : '🔍 开始诊断' }}
+                </button>
+                <button class="btn btn-outline" v-if="file && !loading" @click="reset">重新选择</button>
+            </div>
+
+            <!-- 加载 -->
+            <div class="card" v-if="loading">
+                <div class="loading"><div class="spinner"></div><div>正在分析叶片特征，请稍候...</div></div>
+            </div>
+
+            <!-- 结果 -->
+            <div class="card" v-if="result && !loading">
+                <div class="card-title">📋 诊断结果</div>
+
+                <div class="result-hero">
+                    <div style="flex:1;">
+                        <div class="result-crop">{{ result.top1.crop }} · {{ result.top1.disease }}</div>
+                        <div class="result-label">{{ result.top1.label_cn }}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div class="result-score">{{ result.top1.confidence }}%</div>
+                        <div class="result-score-sub">置信度</div>
+                    </div>
+                </div>
+                <div class="conf-bar">
+                    <div class="conf-bar-fill"
+                         :class="result.top1.confidence >= 90 ? 'conf-high' : result.top1.confidence >= 60 ? 'conf-mid' : 'conf-low'"
+                         :style="{ width: result.top1.confidence + '%' }"></div>
+                </div>
+
+                <div class="top3-list">
+                    <div style="font-size:14px;font-weight:600;margin-bottom:10px;color:#555;">Top-3 预测结果</div>
+                    <div v-for="(item, idx) in result.top3" :key="idx" class="top3-row" :class="{ best: idx === 0 }">
+                        <div class="top3-rank" :class="'rank-' + (idx + 1)">{{ idx + 1 }}</div>
+                        <div class="top3-name">
+                            {{ item.label_cn }}
+                            <small>{{ item.crop }} · {{ item.disease }}</small>
+                        </div>
+                        <div class="top3-pct">{{ item.confidence }}%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card error" v-if="error && !loading">
+                <strong>出错了：</strong>{{ error }}
+            </div>
+        </div>
+
+        <!-- ========== 历史记录页 ========== -->
+        <div v-if="tab === 'history'">
+            <div class="card">
+                <div class="card-title">📋 历史诊断记录</div>
+                <div class="clear-btn" v-if="history.length">
+                    <button class="btn btn-sm btn-outline" @click="clearHistory">清空全部</button>
+                </div>
+                <div v-if="history.length === 0" class="history-empty">
+                    🍂 暂无诊断记录，快去诊断一张图片吧
+                </div>
+                <div v-for="item in history" :key="item.id" class="history-item">
+                    <img class="history-thumb" :src="item.image_url" :alt="item.top1.label_cn" loading="lazy"
+                         @error="$event.target.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect fill=%22%23e0e0e0%22 width=%2264%22 height=%2264%22/><text x=%2232%22 y=%2236%22 text-anchor=%22middle%22 font-size=%2216%22>🍃</text></svg>'">
+                    <div class="history-info">
+                        <div class="history-label">{{ item.top1.label_cn }}</div>
+                        <div class="history-meta">{{ item.time }} · {{ item.top1.crop }} · {{ item.filename }}</div>
+                    </div>
+                    <div class="history-score">{{ item.top1.confidence }}%</div>
+                    <button class="btn btn-sm btn-outline" @click="deleteHistory(item.id)" style="margin-left:8px;">✕</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 统计页 ========== -->
+        <div v-if="tab === 'stats'">
+            <div class="card">
+                <div class="card-title">📊 诊断数据统计</div>
+                <div class="stat-summary">
+                    <div class="stat-box">
+                        <div class="num">{{ statsTotal }}</div>
+                        <div class="txt">总诊断次数</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="num">{{ statsCategories }}</div>
+                        <div class="txt">涉及病害种类</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="num">{{ statsTopDisease }}</div>
+                        <div class="txt">最常见病害</div>
+                    </div>
+                </div>
+                <div class="chart-wrap" ref="chartDom"></div>
+                <div class="history-empty" v-if="statsTotal === 0">暂无统计数据</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+    data() {
+        return {
+            tab: 'diagnose',
+            file: null,
+            previewUrl: null,
+            dragging: false,
+            loading: false,
+            result: null,
+            error: null,
+            history: [],
+            statsData: [],
+            chart: null,
+        };
+    },
+    computed: {
+        statsTotal() { return this.statsData.reduce((s, d) => s + d.value, 0); },
+        statsCategories() { return this.statsData.length; },
+        statsTopDisease() { return this.statsData.length ? this.statsData[0].name : '-'; },
+    },
+    methods: {
+        // ── 诊断 ──
+        handleFile(e) { this.file = e.target.files[0] || null; this.makePreview(); },
+        handleDrop(e) {
+            this.dragging = false;
+            this.file = e.dataTransfer.files[0] || null;
+            this.makePreview();
+        },
+        makePreview() {
+            if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+            this.result = null; this.error = null;
+            if (this.file) this.previewUrl = URL.createObjectURL(this.file);
+        },
+        async submit() {
+            if (!this.file) return;
+            this.loading = true; this.result = null; this.error = null;
+            try {
+                const fd = new FormData(); fd.append('file', this.file);
+                const res = await fetch('/api/predict', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.code === 200) this.result = data.data;
+                else this.error = data.message;
+            } catch (e) {
+                this.error = '网络请求失败，请确认后端服务已启动。';
+            } finally {
+                this.loading = false;
+            }
+        },
+        reset() {
+            this.file = null; this.previewUrl = null;
+            this.result = null; this.error = null;
+            this.$refs.fileInput.value = '';
+        },
+
+        // ── 历史 ──
+        async switchHistory() {
+            this.tab = 'history';
+            try {
+                const res = await fetch('/api/history');
+                const data = await res.json();
+                if (data.code === 200) this.history = data.data;
+            } catch (e) { /* ignore */ }
+        },
+        async deleteHistory(id) {
+            try {
+                await fetch('/api/history/' + id, { method: 'DELETE' });
+                this.history = this.history.filter(r => r.id !== id);
+            } catch (e) { /* ignore */ }
+        },
+        async clearHistory() {
+            if (!confirm('确定清空全部历史记录？')) return;
+            for (const r of [...this.history]) {
+                await fetch('/api/history/' + r.id, { method: 'DELETE' });
+            }
+            this.history = [];
+        },
+
+        // ── 统计 ──
+        async switchStats() {
+            this.tab = 'stats';
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                if (data.code === 200) {
+                    this.statsData = data.data;
+                    this.$nextTick(() => this.renderChart());
+                }
+            } catch (e) { /* ignore */ }
+        },
+        renderChart() {
+            if (!this.$refs.chartDom) return;
+            if (this.chart) this.chart.dispose();
+            this.chart = echarts.init(this.$refs.chartDom);
+
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} 次 ({d}%)',
+                },
+                legend: {
+                    type: 'scroll', orient: 'vertical', right: 10, top: 20, bottom: 20,
+                    textStyle: { fontSize: 12 },
+                },
+                series: [{
+                    name: '病害分布',
+                    type: 'pie',
+                    radius: ['45%', '75%'],
+                    center: ['35%', '50%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
+                    label: { show: false },
+                    emphasis: {
+                        label: { show: true, fontSize: 16, fontWeight: 'bold' },
+                    },
+                    data: this.statsData,
+                }],
+                color: [
+                    '#2e7d32', '#43a047', '#66bb6a', '#81c784', '#a5d6a7',
+                    '#c8e6c9', '#388e3c', '#1b5e20', '#4caf50', '#8bc34a',
+                    '#558b2f', '#689f38', '#7cb342', '#9ccc65', '#aed581',
+                ],
+            };
+            this.chart.setOption(option);
+            window.addEventListener('resize', () => this.chart?.resize());
+        },
+    },
+    mounted() { },
+}).mount('#app');
+</script>
+</body>
+</html>
