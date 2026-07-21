@@ -1,6 +1,5 @@
 import timm
 
-
 def build_model(
     model_name: str = "convnext_tiny",
     num_classes: int = 2,

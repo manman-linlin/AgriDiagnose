@@ -1,10 +1,8 @@
 import argparse
 from pathlib import Path
-
 import torch
 from PIL import Image
 from torchvision import transforms
-
 from config import InferConfig
 from data import IMAGENET_MEAN, IMAGENET_STD
 from model import build_model
