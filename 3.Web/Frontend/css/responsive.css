@@ -1,0 +1,415 @@
+/* ══════════════════════════════════════════════════════════════
+   AgriDiagnose — 响应式样式
+   桌面(>=1024px) / 平板(768-1023px) / 手机(<768px)
+   基于 CSS Grid 三区域布局
+   ══════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════════
+   全局移动端触控增强（所有尺寸适用）
+   ══════════════════════════════════════════════════════════════ */
+
+/* 触控反馈：按下的瞬间有缩放反馈 */
+@media (hover: none) and (pointer: coarse) {
+  .btn:active,
+  .card-interactive:active,
+  .disease-card:active,
+  .action-card:active,
+  .mode-card:active,
+  .nav-item:active,
+  .quick-question:active {
+    transform: scale(0.97);
+  }
+
+  /* 移动端加大行高提升可读性 */
+  .chat-bubble-inner {
+    line-height: 1.7;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   平板：768px - 1023px
+   侧边栏收缩为 56px 图标模式
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) and (min-width: 768px) {
+
+  /* ── Grid 列宽切换为折叠侧边栏 ── */
+  #app {
+    grid-template-columns: var(--sidebar-collapsed-width) 1fr;
+  }
+
+  /* ── 侧边栏折叠态 ── */
+  .sidebar {
+    width: var(--sidebar-collapsed-width);
+  }
+  .sidebar .logo-subtitle,
+  .sidebar .nav-text,
+  .sidebar .status-text,
+  .sidebar .status-version {
+    display: none;
+  }
+  .sidebar-logo { padding: var(--space-md) 0; text-align: center; }
+  .sidebar-logo .logo-title { font-size: 12px; }
+  .nav-item { justify-content: center; padding: 14px 0; }
+
+  /* ── 顶部栏显示汉堡按钮 ── */
+  .topbar .hamburger-btn {
+    display: flex;
+  }
+
+  /* ── 内容区 ── */
+  .page-container { max-width: 100%; }
+
+  /* ── 对话布局 ── */
+  .chat-layout { flex-direction: column; }
+  .chat-panel {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .chat-panel .panel-card { flex: 1; min-width: 180px; }
+
+  /* ── 百科布局 ── */
+  .encyclopedia-layout { flex-direction: column; }
+  .encyclopedia-sidebar {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: var(--space-sm);
+  }
+  .encyclopedia-sidebar .crop-filter-item { white-space: nowrap; }
+
+  .disease-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   手机：< 768px
+   侧边栏退回到 position:fixed 浮层（从顶部栏下方展开）
+   Grid 切换为单列：顶部栏 + 内容区
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+
+  /* ── Grid 切换为单列：侧边栏移出 Grid 流，变为 fixed 浮层 ── */
+  #app {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "topbar"
+      "content";
+  }
+
+  /* ── 侧边栏变为 fixed 浮层（从顶栏下方开始） ── */
+  .sidebar {
+    position: fixed;
+    top: var(--topbar-height);
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-width);
+    z-index: var(--z-sidebar);
+    transform: translateX(-100%);
+    box-shadow: none;
+    grid-area: unset;              /* 脱离 Grid 流 */
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: var(--shadow-xl);
+  }
+
+  /* ── 遮罩层（从顶栏下方开始覆盖） ── */
+  .sidebar-overlay {
+    display: block;
+    top: var(--topbar-height);
+  }
+
+  /* ── 顶部栏显示汉堡按钮 ── */
+  .topbar .hamburger-btn {
+    display: flex;
+  }
+
+  /* ── 内容区 ── */
+  .main-content {
+    margin-left: 0;                /* Grid 已处理，确保无残留 margin */
+  }
+  .page-container {
+    padding: var(--space-md) var(--space-md) var(--space-xl);
+    max-width: 100%;
+  }
+
+  .page-title { font-size: var(--font-size-lg); }
+
+  /* 卡片 */
+  .card { padding: var(--space-md); border-radius: var(--radius-md); }
+
+  /* 结果 */
+  .result-hero { flex-direction: column; text-align: center; }
+  .result-hero .result-score { text-align: center; }
+
+  /* 统计 */
+  .stat-summary { flex-direction: column; }
+
+  /* 对话 */
+  .chat-layout { flex-direction: column; height: auto; }
+  .chat-panel { width: 100%; }
+  .chat-panel .panel-card { display: none; }
+  .chat-panel .panel-card.expanded { display: block; }
+  .chat-bubble { max-width: 90%; }
+
+  /* 百科 */
+  .encyclopedia-layout { flex-direction: column; }
+  .encyclopedia-sidebar {
+    width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    overflow-x: auto;
+    padding-bottom: var(--space-sm);
+    -webkit-overflow-scrolling: touch;
+  }
+  .encyclopedia-sidebar .crop-filter-item {
+    flex-shrink: 0;
+    font-size: var(--font-size-sm);
+    padding: 6px 10px;
+  }
+  .encyclopedia-toolbar {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  .disease-grid { grid-template-columns: 1fr; }
+
+  /* 模态选择 */
+  .mode-cards { flex-direction: column; }
+
+  /* 操作入口 */
+  .action-cards { flex-direction: column; }
+
+  /* 抽屉全屏 */
+  .drawer { width: 100%; max-width: 100%; }
+
+  /* 历史 */
+  .history-item { flex-wrap: wrap; }
+  .history-score { margin-left: auto; }
+
+  /* 贡献表格 -> 卡片 */
+  .contribute-table,
+  .contribute-table thead,
+  .contribute-table tbody,
+  .contribute-table th,
+  .contribute-table td,
+  .contribute-table tr { display: block; }
+  .contribute-table thead { display: none; }
+  .contribute-table tr {
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+  .contribute-table td {
+    padding: 4px 0;
+    border: none;
+  }
+
+  /* 按钮满宽 */
+  .btn { width: 100%; justify-content: center; }
+  .btn-sm { width: auto; }
+
+  /* 最小触控区域 */
+  .nav-item, .btn, .form-select, .crop-filter-item,
+  .quick-question, .category-tag {
+    min-height: var(--touch-min);
+  }
+
+  /* ── 移动端底部导航浮层 ── */
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--color-card);
+    border-top: 1px solid var(--color-border);
+    box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.08);
+    z-index: 50;
+    padding: 6px 0;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+    justify-content: space-around;
+  }
+  .mobile-bottom-nav .mob-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 8px;
+    color: var(--color-text-hint);
+    font-size: 10px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: none;
+    background: none;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-bottom-nav .mob-nav-item .mob-nav-icon {
+    font-size: 20px;
+    transition: transform var(--transition-fast);
+  }
+  .mobile-bottom-nav .mob-nav-item:active .mob-nav-icon {
+    transform: scale(0.85);
+  }
+  .mobile-bottom-nav .mob-nav-item.active {
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  /* 有底部导航时页面需要留出空间 */
+  .has-bottom-nav .page-container {
+    padding-bottom: 80px;
+  }
+
+  /* ── iOS safe area ── */
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .page-container {
+      padding-bottom: calc(var(--space-xl) + env(safe-area-inset-bottom));
+    }
+    .sidebar {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
+
+  /* ── 移动端上传区优化 ── */
+  .upload-zone {
+    padding: 36px 16px;
+  }
+  .upload-zone .upload-icon { font-size: 44px; }
+  .upload-zone::before,
+  .upload-zone::after { display: none; }
+
+  /* ── 移动端结果区 ── */
+  .result-hero {
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+  }
+  .result-hero .result-label { font-size: var(--font-size-xl); }
+  .result-hero .result-score-num { font-size: 36px; }
+
+  /* ── 移动端统计卡片 ── */
+  .stat-box { padding: var(--space-md); }
+  .stat-box .stat-num { font-size: 24px; }
+
+  /* ── 移动端图片网格 ── */
+  .image-grid-item {
+    width: 80px;
+    height: 80px;
+  }
+
+  /* ── 移动端模式卡片 ── */
+  .mode-card { padding: 20px var(--space-md); }
+  .mode-card .mode-icon { font-size: 32px; }
+
+  /* ── 移动端动画简化 ── */
+  .stagger-item { animation-duration: 0.25s; }
+  .scroll-reveal { transform: translateY(12px); transition-duration: 0.3s; }
+  .upload-zone { animation: none; }
+  .conf-bar-fill.conf-high,
+  .conf-bar-fill.conf-mid,
+  .conf-bar-fill.conf-low { animation: none; }
+  .disease-card .disease-img { transition: none; }
+  .disease-card:hover .disease-img { transform: none; }
+  .drawer-overlay {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  /* ── 移动端 3D 效果降级 ── */
+  /* 移除所有 3D 旋转，仅保留简单的 translateY 上浮 */
+  .disease-card:hover,
+  .action-card:hover,
+  .stat-box:hover,
+  .mode-card:hover,
+  .card-interactive:hover {
+    transform: translateY(-2px) !important;
+  }
+
+  .disease-card:active {
+    transform: translateY(-1px) !important;
+  }
+
+  /* 禁用 3D 透视 */
+  .main-content {
+    perspective: none;
+  }
+
+  /* 禁用卡片 3D 入场动画，替换为简单淡入 */
+  .anim-card-3d-in,
+  .anim-card-3d-left,
+  .anim-card-3d-right {
+    animation: fade-in-up 0.3s var(--ease-out) both !important;
+  }
+
+  .stagger-3d-item {
+    animation: card-enter 0.25s var(--ease-out) forwards !important;
+  }
+
+  /* 按钮 3D 按压降级 — 保留轻微反馈 */
+  .btn-primary,
+  .btn-accent,
+  .btn-danger {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+  .btn-primary:hover,
+  .btn-accent:hover,
+  .btn-danger:hover {
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active,
+  .btn-accent:active,
+  .btn-danger:active {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transform: translateY(1px);
+  }
+
+  .btn-secondary,
+  .btn-outline {
+    box-shadow: none;
+  }
+
+  /* 骨架屏浮动改为简单闪烁 */
+  .skeleton-card-3d {
+    animation: none;
+  }
+  .skeleton-card-3d .skeleton-img {
+    transform: none;
+  }
+
+  /* 浮动装饰元素缩小尺寸 */
+  .decor-orbs::before,
+  .decor-orbs::after {
+    animation-duration: 30s;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   平板端 3D 降级（768px - 1023px）
+   ══════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* 平板端减小 3D 旋转角度 */
+  .disease-card:hover {
+    transform: rotateX(0.8deg) rotateY(-0.8deg) translateY(-3px) !important;
+  }
+
+  .action-card:hover,
+  .stat-box:hover,
+  .mode-card:hover {
+    transform: translateY(-2px) !important;
+  }
+
+  /* 减小透视感 */
+  .disease-grid {
+    perspective: 1200px;
+  }
+
+  .main-content {
+    perspective: 1000px;
+  }
+}

@@ -1,0 +1,1461 @@
+/* ══════════════════════════════════════════════════════════════
+   AgriDiagnose — 动画与微交互样式
+   全局 keyframes + 动画工具类 + 页面过渡 + 错位入场 + 滚动揭示
+   设计原则：transform/opacity only，无 layout thrashing
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 缓动函数扩展 ── */
+:root {
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-bounce: cubic-bezier(0.65, 0, 0.35, 1.5);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   1. 页面切换动画（<Transition name="page">）
+   配合 <Transition mode="out-in"> 使用
+   ══════════════════════════════════════════════════════════════ */
+
+.page-enter-active,
+.page-leave-active {
+  transition: opacity var(--transition-normal),
+              transform var(--transition-normal);
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   2. 关键帧定义
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 淡入 + 上移 ── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-left {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fade-in-right {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── 缩放弹出 ── */
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes scale-in-bounce {
+  0%   { opacity: 0; transform: scale(0.8); }
+  60%  { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ── 脉冲（呼吸） ── */
+@keyframes pulse-ring {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(76, 175, 80, 0);
+  }
+}
+
+@keyframes pulse-scale {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.02); }
+}
+
+/* ── 虚线边框呼吸 ── */
+@keyframes dash-breathe {
+  0%, 100% { border-color: var(--color-primary-pale); }
+  50%      { border-color: var(--color-primary-light); }
+}
+
+/* ── 光点扫描（加载进度条） ── */
+@keyframes shimmer-bar {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ── 骨架屏 shimmer ── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── 打字光标闪烁 ── */
+@keyframes cursor-blink {
+  0%, 50%  { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* ── 消息气泡入场 ── */
+@keyframes msg-slide-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── 卡片入场（错位动画基础） ── */
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 进度条填充脉冲 ── */
+@keyframes conf-fill-glow {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.15); }
+}
+
+/* ── 数字递增（配合 JS 使用，此处为静态闪动备选） ── */
+@keyframes number-pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.15); color: var(--color-primary); }
+  100% { transform: scale(1); }
+}
+
+/* ── 侧边栏指示条滑动 ── */
+@keyframes indicator-slide-in {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+/* ── 汉堡菜单图标变换 ── */
+@keyframes hamburger-to-x-top {
+  0%   { transform: translateY(0) rotate(0); }
+  50%  { transform: translateY(6px) rotate(0); }
+  100% { transform: translateY(6px) rotate(45deg); }
+}
+@keyframes hamburger-to-x-bot {
+  0%   { transform: translateY(0) rotate(0); }
+  50%  { transform: translateY(-6px) rotate(0); }
+  100% { transform: translateY(-6px) rotate(-45deg); }
+}
+
+/* ── 抽屉/弹窗入场 ── */
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Toast 出入场 ── */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-16px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateX(-50%) translateY(-12px) scale(0.95); }
+}
+
+/* ── 统计数字递增闪烁（静态备选） ── */
+@keyframes stat-reveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 对话消息入场（chat 页面内联引用） ── */
+@keyframes chatBubbleIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── 欢迎引导态入场 ── */
+@keyframes fadeScaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── 光标闪烁（chat 页面内联引用） ── */
+@keyframes blink {
+  0%, 49%  { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* ── 模式选择卡入场 ── */
+@keyframes mode-card-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── 上传预览切换 ── */
+@keyframes preview-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── 步骤指示器进度 ── */
+@keyframes step-fill {
+  from { width: 0; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   3. 动画工具类（通过添加 class 触发）
+   ══════════════════════════════════════════════════════════════ */
+
+.anim-fade-in-up {
+  animation: fade-in-up var(--transition-slow) var(--ease-out) both;
+}
+.anim-fade-in-down {
+  animation: fade-in-down var(--transition-slow) var(--ease-out) both;
+}
+.anim-fade-in-left {
+  animation: fade-in-left var(--transition-slow) var(--ease-out) both;
+}
+.anim-fade-in-right {
+  animation: fade-in-right var(--transition-slow) var(--ease-out) both;
+}
+.anim-scale-in {
+  animation: scale-in var(--transition-slow) var(--ease-out) both;
+}
+.anim-scale-in-bounce {
+  animation: scale-in-bounce 0.4s var(--ease-spring) both;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   4. 错位入场（staggered animation-delay）
+   配合 --i 自定义属性使用（i 从 0 开始）
+   ══════════════════════════════════════════════════════════════ */
+
+.stagger-item {
+  opacity: 0;
+  animation: card-enter 0.4s var(--ease-out) forwards;
+}
+
+/* 使用示例：子元素 style="--i:0" → animation-delay: 0ms
+                    style="--i:1" → animation-delay: 60ms
+                    style="--i:2" → animation-delay: 120ms 以此类推
+   在模板中设置 animation-delay: calc(var(--i, 0) * 60ms) */
+
+/* ── 百科卡片错位 ── */
+.disease-card.stagger-item {
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+/* ── 历史记录错位 ── */
+.history-item.stagger-item {
+  animation-delay: calc(var(--i, 0) * 50ms);
+}
+
+/* ── 操作入口卡片错位 ── */
+.action-card.stagger-item {
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+
+/* ── 统计卡片错位 ── */
+.stat-box.stagger-item {
+  animation-delay: calc(var(--i, 0) * 100ms);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   5. 滚动触发揭示（配合 IntersectionObserver 使用）
+   初始状态 opacity:0，JS 添加 .revealed 后触发动画
+   ══════════════════════════════════════════════════════════════ */
+
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.5s var(--ease-out),
+              transform 0.5s var(--ease-out);
+}
+
+.scroll-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 可选变体 */
+.scroll-reveal-left {
+  opacity: 0;
+  transform: translateX(-24px);
+  transition: opacity 0.5s var(--ease-out),
+              transform 0.5s var(--ease-out);
+}
+.scroll-reveal-left.revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.scroll-reveal-right {
+  opacity: 0;
+  transform: translateX(24px);
+  transition: opacity 0.5s var(--ease-out),
+              transform 0.5s var(--ease-out);
+}
+.scroll-reveal-right.revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.scroll-reveal-scale {
+  opacity: 0;
+  transform: scale(0.92);
+  transition: opacity 0.5s var(--ease-out),
+              transform 0.5s var(--ease-out);
+}
+.scroll-reveal-scale.revealed {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   6. 骨架屏实际使用态
+   ══════════════════════════════════════════════════════════════ */
+
+.skeleton-box {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-text {
+  height: 14px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.skeleton-text.short { width: 60%; }
+.skeleton-text.medium { width: 80%; }
+
+.skeleton-title {
+  height: 20px;
+  width: 50%;
+  margin-bottom: 12px;
+  border-radius: 4px;
+}
+
+.skeleton-avatar {
+  border-radius: var(--radius-round);
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-img {
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   7. 按钮交互增强
+   ══════════════════════════════════════════════════════════════ */
+
+.btn {
+  position: relative;
+  overflow: hidden;
+}
+
+/* 点击波纹（纯 CSS 模拟：active 缩放） */
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Hover 上浮 */
+.btn-primary:hover:not(:disabled),
+.btn-accent:hover:not(:disabled),
+.btn-danger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary:hover:not(:disabled),
+.btn-outline:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* 加载态按钮 */
+.btn.is-loading {
+  pointer-events: none;
+  position: relative;
+  color: transparent !important;
+}
+.btn.is-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 18px; height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* 次要按钮 loading */
+.btn-secondary.is-loading::after,
+.btn-outline.is-loading::after {
+  border-color: rgba(0, 0, 0, 0.1);
+  border-top-color: var(--color-primary);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   8. 侧边栏微交互增强
+   ══════════════════════════════════════════════════════════════ */
+
+/* 导航项激活指示条动画 —— 在已经使用 border-left 的基础上
+   添加一个伪元素滑动指示器作为增强 */
+.nav-item {
+  position: relative;
+}
+
+/* 使用 ::before 做背景滑动高亮 */
+.nav-item::before {
+  content: '';
+  position: absolute;
+  inset: 4px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--color-sidebar-active-bg);
+  opacity: 0;
+  transform: scaleX(0.8);
+  transition: opacity var(--transition-fast),
+              transform var(--transition-fast);
+  z-index: -1;
+}
+.nav-item:hover::before {
+  opacity: 0.5;
+  transform: scaleX(1);
+}
+.nav-item.active::before {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+/* 移除旧 hover 背景以避免冲突 */
+.nav-item:hover {
+  background: transparent;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   9. 上传区域呼吸动画
+   ══════════════════════════════════════════════════════════════ */
+
+.upload-zone {
+  animation: dash-breathe 3s ease-in-out infinite;
+}
+
+/* 拖拽悬停时增强脉冲 */
+.upload-zone.dragover {
+  animation: none;
+  transform: scale(1.01);
+  box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.15);
+}
+
+/* 图片预览切换 */
+.upload-zone img.upload-preview {
+  animation: preview-in 0.3s var(--ease-out);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   10. 置信度进度条增强
+   ══════════════════════════════════════════════════════════════ */
+
+/* 填充后短暂发光 */
+.conf-bar-fill.conf-high {
+  background: linear-gradient(90deg, var(--color-primary), #66BB6A, var(--color-primary));
+  background-size: 200% 100%;
+  animation: shimmer-bar 2s ease-in-out infinite;
+}
+.conf-bar-fill.conf-mid {
+  background: linear-gradient(90deg, var(--color-warning), #FFC107, var(--color-warning));
+  background-size: 200% 100%;
+  animation: shimmer-bar 2s ease-in-out infinite;
+}
+.conf-bar-fill.conf-low {
+  background: linear-gradient(90deg, var(--color-error), #EF5350, var(--color-error));
+  background-size: 200% 100%;
+  animation: shimmer-bar 2s ease-in-out infinite;
+}
+
+/* 置信度数值弹出动画 */
+.result-score-num {
+  animation: number-pop 0.5s var(--ease-spring) both;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   11. 对话页面动画
+   ══════════════════════════════════════════════════════════════ */
+
+/* 消息气泡入场 */
+.chat-bubble {
+  animation: msg-slide-in 0.3s var(--ease-out) both;
+}
+
+/* AI 打字光标 —— 用在内容最后追加伪元素 */
+.chat-bubble-inner.typing::after {
+  content: '|';
+  display: inline;
+  animation: cursor-blink 0.8s step-end infinite;
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* 输入框聚焦动画 */
+.chat-input-bar input {
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+.chat-input-bar input:focus {
+  border-color: var(--color-primary-light);
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.12);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   12. 百科卡片增强
+   ══════════════════════════════════════════════════════════════ */
+
+/* 图片缩放 */
+.disease-card .disease-img {
+  transition: transform 0.4s var(--ease-out);
+}
+.disease-card:hover .disease-img {
+  transform: scale(1.05);
+}
+
+/* 阴影抬升增强 */
+.disease-card:hover {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+}
+
+/* 网格过滤过渡 —— 卡片使用 transition 做淡出 */
+.disease-card {
+  transition: opacity 0.3s var(--ease-out),
+              transform 0.3s var(--ease-out),
+              box-shadow 0.3s var(--ease-out);
+}
+
+/* 详情链接 hover */
+.disease-card .disease-link {
+  transition: color var(--transition-fast),
+              transform var(--transition-fast);
+  display: inline-block;
+}
+.disease-card:hover .disease-link {
+  transform: translateX(4px);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   13. 抽屉/弹窗增强
+   ══════════════════════════════════════════════════════════════ */
+
+/* 遮罩毛玻璃效果 */
+.drawer-overlay {
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* 关闭按钮 hover */
+.drawer-close {
+  transition: background var(--transition-fast),
+              transform var(--transition-fast);
+}
+.drawer-close:hover {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  transform: rotate(90deg);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   14. Toast 增强
+   ══════════════════════════════════════════════════════════════ */
+
+.toast {
+  animation: toast-in 0.35s var(--ease-spring);
+}
+.toast.leaving {
+  animation: toast-out 0.25s var(--ease-out) forwards;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   15. 步骤指示器增强
+   ══════════════════════════════════════════════════════════════ */
+
+.step.active::after {
+  animation: step-fill 0.5s var(--ease-out);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   16. 状态点脉冲（在线/离线指示器）
+   ══════════════════════════════════════════════════════════════ */
+
+.status-dot.online {
+  animation: pulse-ring 2s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   17. 交互卡片 hover 增强
+   ══════════════════════════════════════════════════════════════ */
+
+.card-interactive:active {
+  transform: scale(0.98);
+}
+
+.mode-card:active {
+  transform: scale(0.97);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   18. prefers-reduced-motion 无障碍
+   ══════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .scroll-reveal,
+  .scroll-reveal-left,
+  .scroll-reveal-right,
+  .scroll-reveal-scale {
+    opacity: 1;
+    transform: none;
+  }
+
+  .stagger-item {
+    opacity: 1;
+    animation: none;
+  }
+
+  .upload-zone {
+    animation: none;
+  }
+
+  .conf-bar-fill.conf-high,
+  .conf-bar-fill.conf-mid,
+  .conf-bar-fill.conf-low {
+    animation: none;
+  }
+
+  /* 3D 效果降级为平面 */
+  .card-3d,
+  .card-3d-tilt,
+  .disease-card,
+  .action-card {
+    transform: none !important;
+  }
+
+  .float-orb,
+  .float-leaf,
+  .float-blob {
+    display: none;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   19. 3D 卡片倾斜效果（高优先级）
+   父容器 perspective，卡片 preserve-3d + hover 微旋转
+   ══════════════════════════════════════════════════════════════ */
+
+/* 透视容器 — 包裹需要 3D 效果的卡片 */
+.perspective-container {
+  perspective: var(--perspective-card);
+  perspective-origin: center center;
+}
+
+/* 3D 卡片基类 */
+.card-3d {
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform 0.4s var(--ease-out),
+              box-shadow 0.4s var(--ease-out);
+  box-shadow: var(--card-3d-shadow-rest);
+}
+
+.card-3d:hover {
+  transform: rotateX(2deg) rotateY(-2deg) translateY(-4px);
+  box-shadow: var(--card-3d-shadow-hover);
+}
+
+/* 3D 倾斜变体 — 跟随鼠标（用 JS 注入 --mouse-x, --mouse-y）
+   或纯 CSS hover 提示 */
+.card-3d-tilt {
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform 0.2s var(--ease-out),
+              box-shadow 0.4s var(--ease-out);
+  box-shadow: var(--card-3d-shadow-rest);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-3d-tilt:hover {
+  box-shadow: var(--card-3d-shadow-hover);
+}
+
+/* 卡片内 3D 辉光层 — hover 时出现反光 */
+.card-3d-glow {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(255, 255, 255, 0.25),
+    transparent 50%
+  );
+  opacity: 0;
+  transition: opacity 0.3s var(--ease-out);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.card-3d-tilt:hover .card-3d-glow {
+  opacity: 1;
+}
+
+/* 图片区域凸出效果 */
+.card-3d .disease-img {
+  transform: translateZ(8px);
+  transition: transform 0.4s var(--ease-out);
+}
+
+.card-3d:hover .disease-img {
+  transform: translateZ(16px);
+}
+
+/* 文字区域保持在原始深度 */
+.card-3d .disease-body {
+  transform: translateZ(0);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   20. 页面切换 3D 过渡（高优先级）
+   旧页面缩小+淡出，新页面从下方带透视滑入
+   ══════════════════════════════════════════════════════════════ */
+
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.3s var(--ease-out),
+              transform 0.35s var(--ease-out);
+}
+
+/* 旧页面：缩小 + 淡出 */
+.page-leave-to {
+  opacity: 0;
+  transform: scale(0.96) translateY(-4px);
+}
+
+/* 新页面：从下方 3D 视角滑入 */
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+/* 页面内部 3D 过渡（用于 Transition wrapper 内的内容）
+   注：.main-content 的 perspective 由 layout.css 统一管理 */
+.page-container > .page-enter-active {
+  transform-origin: center top;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   21. 侧边栏导航 3D 效果（高优先级）
+   选中指示器从左侧弹出 + 图标微旋转 + 缩放
+   ══════════════════════════════════════════════════════════════ */
+
+/* 选中态指示条 3D 弹出 */
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 20px;
+  background: var(--color-sidebar-indicator);
+  border-radius: 2px;
+  animation: nav-indicator-pop 0.35s var(--ease-spring) both;
+  box-shadow: var(--glow-sidebar-indicator);
+  transform-origin: left center;
+}
+
+@keyframes nav-indicator-pop {
+  from {
+    transform: translateY(-50%) scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(-50%) scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* 导航图标 hover 3D 旋转 + 缩放 */
+.nav-item .nav-icon {
+  transition: transform 0.3s var(--ease-spring);
+  will-change: transform;
+}
+
+.nav-item:hover .nav-icon {
+  transform: scale(1.2) rotateY(15deg);
+}
+
+/* 导航项 hover 轻微 Z 轴平移 */
+.nav-item {
+  transition: transform 0.25s var(--ease-out),
+              background 0.25s var(--ease-out),
+              color 0.25s var(--ease-out);
+}
+
+.nav-item:hover {
+  transform: translateZ(4px);
+}
+
+/* 激活的导航项微向前凸 */
+.nav-item.active {
+  transform: translateZ(2px);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   22. 浮动装饰元素（高优先级）
+   背景中的半透明光斑和叶片形状，带有视差漂移
+   ══════════════════════════════════════════════════════════════ */
+
+/* 光斑 */
+.float-orb {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: var(--z-float-decor);
+  will-change: transform;
+}
+
+/* 绿色光斑 */
+.float-orb-green {
+  width: 280px;
+  height: 280px;
+  background: var(--glow-orb-green);
+  top: 10%;
+  left: 5%;
+  animation: float-orb-drift 18s ease-in-out infinite;
+}
+
+.float-orb-green-2 {
+  width: 200px;
+  height: 200px;
+  background: var(--glow-orb-green);
+  bottom: 20%;
+  right: 8%;
+  animation: float-orb-drift 22s ease-in-out infinite reverse;
+}
+
+/* 琥珀色光斑 */
+.float-orb-amber {
+  width: 240px;
+  height: 240px;
+  background: var(--glow-orb-amber);
+  top: 40%;
+  right: 15%;
+  animation: float-orb-drift 20s ease-in-out infinite 3s;
+}
+
+/* 大地色光斑 */
+.float-orb-earth {
+  width: 180px;
+  height: 180px;
+  background: var(--glow-orb-earth);
+  bottom: 10%;
+  left: 25%;
+  animation: float-orb-drift 24s ease-in-out infinite 6s;
+}
+
+@keyframes float-orb-drift {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  25% {
+    transform: translate3d(30px, -25px, 0) scale(1.08);
+  }
+  50% {
+    transform: translate3d(-15px, 20px, 0) scale(0.94);
+  }
+  75% {
+    transform: translate3d(-25px, -10px, 0) scale(1.05);
+  }
+}
+
+/* 叶片装饰（使用 SVG 背景或伪元素绘制） */
+.float-leaf {
+  position: fixed;
+  pointer-events: none;
+  z-index: var(--z-float-decor);
+  will-change: transform;
+  opacity: 0.06;
+}
+
+/* 叶片形状 — CSS 绘制简化叶片 */
+.float-leaf::after {
+  content: '';
+  display: block;
+  width: 80px;
+  height: 100px;
+  background: var(--color-primary);
+  border-radius: 0 80% 10% 80%;
+  transform: rotate(-15deg);
+}
+
+/* 叶片漂移动画 */
+.float-leaf-1 {
+  top: 15%;
+  right: 10%;
+  animation: float-leaf-sway 28s ease-in-out infinite;
+}
+
+.float-leaf-2 {
+  bottom: 25%;
+  left: 8%;
+  animation: float-leaf-sway 32s ease-in-out infinite 5s reverse;
+}
+
+.float-leaf-3 {
+  top: 55%;
+  right: 25%;
+  animation: float-leaf-sway 25s ease-in-out infinite 8s;
+}
+
+@keyframes float-leaf-sway {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(-5deg);
+  }
+  25% {
+    transform: translate3d(40px, -30px, 0) rotate(2deg) scale(1.1);
+  }
+  50% {
+    transform: translate3d(-20px, 25px, 0) rotate(-8deg) scale(0.92);
+  }
+  75% {
+    transform: translate3d(-35px, -15px, 0) rotate(0deg) scale(1.05);
+  }
+}
+
+/* 流动渐变光斑（aurora blob） */
+.float-blob {
+  position: fixed;
+  border-radius: 45% 55% 60% 40% / 40% 50% 50% 60%;
+  pointer-events: none;
+  z-index: var(--z-float-decor);
+  will-change: transform;
+  filter: blur(60px);
+}
+
+.float-blob-1 {
+  width: 400px;
+  height: 350px;
+  background: rgba(76, 175, 80, 0.05);
+  top: 20%;
+  left: -5%;
+  animation: blob-morph 16s ease-in-out infinite;
+}
+
+.float-blob-2 {
+  width: 350px;
+  height: 300px;
+  background: rgba(124, 179, 66, 0.04);
+  bottom: 15%;
+  right: -5%;
+  animation: blob-morph 20s ease-in-out infinite 4s reverse;
+}
+
+@keyframes blob-morph {
+  0%, 100% {
+    border-radius: 45% 55% 60% 40% / 40% 50% 50% 60%;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  25% {
+    border-radius: 55% 45% 40% 60% / 55% 45% 50% 50%;
+    transform: translate3d(40px, -25px, 0) scale(1.12);
+  }
+  50% {
+    border-radius: 60% 40% 50% 50% / 45% 55% 45% 55%;
+    transform: translate3d(-25px, 20px, 0) scale(0.92);
+  }
+  75% {
+    border-radius: 40% 60% 55% 45% / 60% 40% 55% 45%;
+    transform: translate3d(-35px, -15px, 0) scale(1.06);
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   23. 卡片入场 3D 翻转（高优先级）
+   使用 rotateX 从轻微仰角翻转到平面
+   ══════════════════════════════════════════════════════════════ */
+
+@keyframes card-enter-3d {
+  from {
+    opacity: 0;
+    transform: rotateX(8deg) translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: rotateX(0) translateY(0) scale(1);
+  }
+}
+
+@keyframes card-enter-3d-left {
+  from {
+    opacity: 0;
+    transform: rotateY(-10deg) translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: rotateY(0) translateX(0);
+  }
+}
+
+@keyframes card-enter-3d-right {
+  from {
+    opacity: 0;
+    transform: rotateY(10deg) translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: rotateY(0) translateX(0);
+  }
+}
+
+/* 入场工具类 */
+.anim-card-3d-in {
+  animation: card-enter-3d 0.5s var(--ease-out) both;
+}
+
+.anim-card-3d-left {
+  animation: card-enter-3d-left 0.5s var(--ease-out) both;
+}
+
+.anim-card-3d-right {
+  animation: card-enter-3d-right 0.5s var(--ease-out) both;
+}
+
+/* 错位 3D 入场 — 配合 stagger-item + --i 使用 */
+.stagger-3d-item {
+  opacity: 0;
+  animation: card-enter-3d 0.45s var(--ease-out) forwards;
+  animation-delay: calc(var(--i, 0) * 60ms);
+  transform-origin: center top;
+  transform-style: preserve-3d;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   24. 置信度数字滚动（中等优先级）
+   简化为 translateY 滑入 + 弹簧弹性（翻牌钟替代方案）
+   ══════════════════════════════════════════════════════════════ */
+
+@keyframes number-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 数字更新时触发 — 通过添加 .number-updated class */
+.result-score-num.number-updated {
+  animation: number-slide-in 0.45s var(--ease-spring) both;
+}
+
+/* 数字滚动效果增强 — 每个数字独立滚动 */
+.number-roller {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: middle;
+  height: 1.2em;
+  line-height: 1.2;
+}
+
+.number-roller .digit-track {
+  transition: transform 0.5s var(--ease-in-out);
+}
+
+/* 翻牌钟模拟（纯 CSS 伪 3D）
+   在数字容器上制作中线分界和半高折叠 */
+.digit-flip {
+  display: inline-block;
+  position: relative;
+  perspective: var(--perspective-strong);
+}
+
+.digit-flip .flip-card {
+  display: inline-block;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.6s var(--ease-in-out);
+}
+
+.digit-flip.flipped .flip-card {
+  transform: rotateX(-180deg);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   25. 按钮 3D 按压效果（高优先级）
+   box-shadow 模拟底层厚度 + :active 按下 + hover 浮起
+   ══════════════════════════════════════════════════════════════ */
+
+/* 主按钮 3D 凸起 */
+.btn-primary {
+  position: relative;
+  transition: transform 0.1s var(--ease-out),
+              box-shadow 0.1s var(--ease-out),
+              background 0.2s var(--ease-out);
+  /* 底部阴影模拟 3D 厚度 */
+  box-shadow:
+    0 4px 0 #1B5E20,
+    0 6px 12px rgba(46, 125, 50, 0.3);
+  transform: translateY(0);
+}
+
+.btn-primary:hover {
+  box-shadow:
+    0 6px 0 #1B5E20,
+    0 8px 18px rgba(46, 125, 50, 0.35);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  box-shadow:
+    0 1px 0 #1B5E20,
+    0 2px 4px rgba(46, 125, 50, 0.2);
+  transform: translateY(3px);
+}
+
+.btn-primary:disabled {
+  box-shadow: none;
+  transform: none;
+  background: var(--color-primary-pale);
+}
+
+/* 描边按钮 3D 轻量版 */
+.btn-outline {
+  transition: transform 0.1s var(--ease-out),
+              box-shadow 0.1s var(--ease-out);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.btn-outline:hover {
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.btn-outline:active {
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  transform: translateY(1px);
+}
+
+/* 次要按钮 3D */
+.btn-secondary {
+  transition: transform 0.1s var(--ease-out),
+              box-shadow 0.1s var(--ease-out);
+  box-shadow: 0 3px 0 rgba(76, 175, 80, 0.15);
+}
+
+.btn-secondary:hover {
+  box-shadow: 0 4px 0 rgba(76, 175, 80, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+  box-shadow: 0 1px 0 rgba(76, 175, 80, 0.1);
+  transform: translateY(2px);
+}
+
+/* 强调按钮 3D */
+.btn-accent {
+  transition: transform 0.1s var(--ease-out),
+              box-shadow 0.1s var(--ease-out);
+  box-shadow:
+    0 4px 0 #E65100,
+    0 6px 12px rgba(255, 111, 0, 0.25);
+}
+
+.btn-accent:hover {
+  box-shadow:
+    0 6px 0 #E65100,
+    0 8px 16px rgba(255, 111, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-accent:active {
+  box-shadow:
+    0 1px 0 #E65100,
+    0 2px 4px rgba(255, 111, 0, 0.15);
+  transform: translateY(3px);
+}
+
+/* 危险按钮 3D */
+.btn-danger {
+  transition: transform 0.1s var(--ease-out),
+              box-shadow 0.1s var(--ease-out);
+  box-shadow:
+    0 4px 0 #B71C1C,
+    0 6px 12px rgba(198, 40, 40, 0.2);
+}
+
+.btn-danger:hover {
+  box-shadow:
+    0 6px 0 #B71C1C,
+    0 8px 16px rgba(198, 40, 40, 0.25);
+  transform: translateY(-2px);
+}
+
+.btn-danger:active {
+  box-shadow:
+    0 1px 0 #B71C1C,
+    0 2px 4px rgba(198, 40, 40, 0.1);
+  transform: translateY(3px);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   26. 骨架屏 3D 层次（中等优先级）
+   加载卡片微浮动 + 3D 景深
+   ══════════════════════════════════════════════════════════════ */
+
+@keyframes skeleton-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -4px, 0);
+  }
+}
+
+@keyframes skeleton-shimmer-3d {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* 3D 骨架卡片 */
+.skeleton-card-3d {
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--card-3d-shadow-rest);
+  transform-style: preserve-3d;
+  animation: skeleton-float 3s ease-in-out infinite;
+}
+
+.skeleton-card-3d .skeleton-img {
+  height: 160px;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e8e8e8 37%,
+    #f0f0f0 63%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer-3d 2s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+  transform: translateZ(4px);
+}
+
+.skeleton-card-3d .skeleton-title {
+  height: 18px;
+  width: 60%;
+  margin-bottom: 10px;
+}
+
+.skeleton-card-3d .skeleton-line {
+  height: 12px;
+  margin-bottom: 8px;
+}
+
+.skeleton-card-3d .skeleton-line:last-child {
+  width: 40%;
+}
+
+/* 骨架元素通用浮动 */
+.skeleton-box.float {
+  animation:
+    shimmer 1.5s ease-in-out infinite,
+    skeleton-float 3s ease-in-out infinite;
+}
+
+/* 骨架 3D 错位浮动 — 不同层级不同节奏 */
+.skeleton-card-3d .skeleton-title {
+  animation: skeleton-float 3s ease-in-out infinite 0.1s;
+}
+
+.skeleton-card-3d .skeleton-line:nth-child(3) {
+  animation: skeleton-float 3s ease-in-out infinite 0.2s;
+}
+
+.skeleton-card-3d .skeleton-line:nth-child(4) {
+  animation: skeleton-float 3s ease-in-out infinite 0.3s;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   27. 结果卡片 3D 增强（高优先级）
+   诊断结果 Hero 区 3D 景深 + 置信度圆环 3D
+   ══════════════════════════════════════════════════════════════ */
+
+/* Hero 区 3D 层叠 */
+.result-hero-3d {
+  perspective: var(--perspective-card);
+  transform-style: preserve-3d;
+}
+
+/* 顶部装饰条的 3D 版本 */
+.result-hero::before {
+  transform: translateZ(5px);
+}
+
+/* 分数数字 3D 弹性入场 */
+@keyframes score-3d-pop {
+  0% {
+    opacity: 0;
+    transform: translateZ(-50px) scale(0.5);
+  }
+  60% {
+    opacity: 1;
+    transform: translateZ(10px) scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: translateZ(0) scale(1);
+  }
+}
+
+.result-score-num.pop-3d {
+  animation: score-3d-pop 0.7s var(--ease-spring) both;
+}
+
+/* Top-3 行 3D hover 前移 */
+.top3-row {
+  transition: transform 0.3s var(--ease-out),
+              background 0.3s var(--ease-out);
+}
+
+.top3-row:hover {
+  transform: translateX(4px) translateZ(2px);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   28. 3D 图片悬停放大镜效果（可选，性能较重的增强）
+   ══════════════════════════════════════════════════════════════ */
+
+.disease-card.with-3d-zoom .disease-img {
+  perspective: var(--perspective-strong);
+  overflow: hidden;
+}
+
+.disease-card.with-3d-zoom .disease-img img {
+  transition: transform 0.5s var(--ease-out);
+  will-change: transform;
+}
+
+.disease-card.with-3d-zoom:hover .disease-img img {
+  transform: scale(1.12) translateZ(10px);
+}
+
+/* 3D 辉光边框效果（可选） */
+.card-glow-edge {
+  position: relative;
+}
+
+.card-glow-edge::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(76, 175, 80, 0.3),
+    rgba(124, 179, 66, 0.15),
+    transparent 60%
+  );
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-out);
+  pointer-events: none;
+}
+
+.card-glow-edge:hover::after {
+  opacity: 1;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   29. GPU 加速全局增强（所有动画）
+   对频繁动画的元素强制 GPU 合成层
+   注意：仅包含不需要响应式 transform 更改的纯装饰/动画元素。
+   卡片和按钮的 GPU 加速由各自的 will-change 和 transform 规则处理，
+   放在此处会因为源顺序覆盖 components.css 中的 hover 规则。
+   ══════════════════════════════════════════════════════════════ */
+
+/* 纯装饰元素 — 没有 hover 交互，安全启用 GPU 层 */
+.float-orb,
+.float-leaf,
+.float-blob,
+.skeleton-card-3d,
+.card-3d-glow {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* 有交互的元素 — will-change 按需启用（避免常驻占用显存） */
+.disease-card:hover,
+.action-card:hover,
+.mode-card:hover,
+.stat-box:hover,
+.card-3d:hover,
+.card-3d-tilt:hover,
+.card-interactive:hover {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* 强制 GPU 渲染层的基础动画元素 */
+@supports (transform: translate3d(0, 0, 0)) {
+  .page-enter-active,
+  .page-leave-active {
+    transform: translate3d(0, 0, 0);
+  }
+}
