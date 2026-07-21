@@ -5,3 +5,5 @@ torch
 torchvision
 timm
 Pillow
+requests
+python-dotenv

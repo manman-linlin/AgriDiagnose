@@ -29,3 +29,6 @@ Thumbs.db
 
 # 临时文件
 *.tmp
+
+# Agent 密钥
+4.Agent/.env

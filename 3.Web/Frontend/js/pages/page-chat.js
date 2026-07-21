@@ -11,9 +11,11 @@ window.makePageChat = function () {
         inputText: '',
         loading: false,
         panelExpanded: false,
-        typingText: '',          // 逐字输出当前文本
-        typingTimer: null,       // 打字定时器
-        typingMsgIdx: -1,        // 正在打字的 msg index
+        typingText: '',          // 当前正在流式接收的文本（真实 SSE 增量拼接）
+        typingMsgIdx: -1,        // 正在接收流的 msg index
+        activeStream: null,      // 当前打开的 EventSource
+        pendingImage: null,      // 待发送的图片 File
+        pendingImageUrl: null,   // 待发送图片的本地预览 URL
       };
     },
     computed: {
@@ -42,6 +44,45 @@ window.makePageChat = function () {
         if (v >= 60) return '⚠️ 中置信度';
         return '❌ 低置信度';
       },
+      // ── AI 纠错状态：对照模型判断 + Agent 视觉复核给出四态展示 ──
+      reviewInfo() {
+        const msg = this.messages.find(m => m.role === 'assistant' && m.review);
+        if (!msg) return null;
+        const review = msg.review;
+        const conf = this.diagnosis?.top1?.confidence ?? 0;
+        const modelLabel = this.diagnosis?.top1?.label_cn || '';
+
+        if (review.agrees_with_model === null || review.agrees_with_model === undefined) {
+          return {
+            level: 'gray',
+            text: '⚪ 图片质量不足以判断，建议重新拍摄清晰照片',
+            detail: review.confidence_note || '',
+            evidence: [],
+          };
+        }
+        if (review.agrees_with_model === false) {
+          return {
+            level: 'orange',
+            text: `🟠 AI 判断可能是"${review.ai_diagnosis || '未知'}"，与模型结果不同`,
+            detail: `模型：${modelLabel}　AI：${review.ai_diagnosis || '未知'}（建议以 AI 判断为准）`,
+            evidence: review.visual_evidence || [],
+          };
+        }
+        if (conf < 80) {
+          return {
+            level: 'yellow',
+            text: '🟡 模型与 AI 判断一致，但置信度较低，建议人工复核',
+            detail: '',
+            evidence: review.visual_evidence || [],
+          };
+        }
+        return {
+          level: 'green',
+          text: '🟢 模型 + AI 双重确认一致',
+          detail: '',
+          evidence: review.visual_evidence || [],
+        };
+      },
     },
     mounted() {
       if (this.hasDiagnosis && store.chat.messages.length === 0) {
@@ -49,123 +90,154 @@ window.makePageChat = function () {
       }
     },
     beforeUnmount() {
-      this.stopTyping();
+      this.closeStream();
     },
     methods: {
       togglePanel() { this.panelExpanded = !this.panelExpanded; },
 
-      // ── 打字效果：逐字输出 ──
-      startTyping(text, msgIdx) {
-        this.stopTyping();
-        this.typingText = '';
-        this.typingMsgIdx = msgIdx;
-        let i = 0;
-        const speed = 30 + Math.random() * 25; // 30-55ms per char
-        this.typingTimer = setInterval(() => {
-          if (i < text.length) {
-            this.typingText += text[i];
-            i++;
-            // 确保滚动跟随
-            this.scrollToBottom();
-          } else {
-            this.stopTyping();
-            // Typing complete — store final text
-            if (this.typingMsgIdx >= 0 && this.typingMsgIdx < store.chat.messages.length) {
-              store.chat.messages[this.typingMsgIdx]._typedContent = text;
-            }
-          }
-        }, speed);
-      },
-      stopTyping() {
-        if (this.typingTimer) {
-          clearInterval(this.typingTimer);
-          this.typingTimer = null;
+      closeStream() {
+        if (this.activeStream) {
+          this.activeStream.close();
+          this.activeStream = null;
         }
         this.typingMsgIdx = -1;
       },
+
       getMsgContent(msg, idx) {
-        // 如果是正在打字的 AI 消息，返回打字文本
+        // 正在接收流的 AI 消息：显示实时拼接的增量文本
         if (msg.role === 'assistant' && idx === this.typingMsgIdx) {
           return this.typingText || '';
         }
-        // 如果已经打完
-        if (msg._typedContent) return msg._typedContent;
         return msg.content || '';
+      },
+
+      // ── 打开一条 SSE 流：text 为空 = 首轮诊断开场白，非空 = 多轮追问 ──
+      openStream(text) {
+        this.loading = true;
+        this.closeStream();
+
+        let msgIdx = -1;
+        let full = '';
+        const es = window.Api.streamChat(store.chat.sessionId, text);
+        this.activeStream = es;
+
+        es.onmessage = (ev) => {
+          let payload;
+          try { payload = JSON.parse(ev.data); } catch { return; }
+
+          if (payload.type === 'delta') {
+            if (msgIdx === -1) {
+              store.chat.messages.push({ role: 'assistant', content: '', advice: null, review: null, time: new Date().toLocaleTimeString() });
+              msgIdx = store.chat.messages.length - 1;
+              this.typingMsgIdx = msgIdx;
+              this.typingText = '';
+              this.loading = false;
+            }
+            full += payload.text;
+            this.typingText = full;
+            this.scrollToBottom();
+          } else if (payload.type === 'done') {
+            if (msgIdx === -1) {
+              store.chat.messages.push({
+                role: 'assistant',
+                content: full,
+                advice: payload.advice || null,
+                review: payload.review || null,
+                time: new Date().toLocaleTimeString(),
+              });
+            } else {
+              store.chat.messages[msgIdx].content = full;
+              if (payload.advice) store.chat.messages[msgIdx].advice = payload.advice;
+              if (payload.review) store.chat.messages[msgIdx].review = payload.review;
+            }
+            this.loading = false;
+            this.closeStream();
+          } else if (payload.type === 'error') {
+            this.loading = false;
+            store.showToast(payload.message || 'AI 服务异常', 'error');
+            this.closeStream();
+          }
+        };
+
+        es.onerror = () => {
+          this.loading = false;
+          store.showToast('AI 连接异常，请重试', 'error');
+          this.closeStream();
+        };
       },
 
       // ── 开始 AI 分析 ──
       async startAiAnalysis() {
         this.loading = true;
-        const d = store.diagnosis.result.top1;
-
-        const fullContent = `我收到了你的叶片图片和模型识别结果。\n\n经过多模态分析，我判断：这确实是**${d.label_cn}**。模型识别结果与我的视觉分析一致。\n\n以下是详细的防治方案：`;
-
-        const aiMsg = {
-          role: 'assistant',
-          content: fullContent,
-          advice: {
-            disease_name: d.label_cn,
-            symptoms: '叶片出现不规则病斑，颜色异常，严重时叶片枯黄脱落。',
-            cause: '病原菌侵染引起，高温高湿环境下易发生。',
-            prevention: [
-              '选择抗病品种进行种植',
-              '合理轮作，避免连作',
-              '加强田间通风透光',
-              '及时清理病残体',
-            ],
-            treatment: [
-              '发病初期使用针对性杀菌剂喷雾',
-              '注意药剂交替使用，避免产生抗药性',
-              '严格遵守农药安全间隔期',
-            ],
-            risk_level: '中',
-            manual_check_required: false,
-          },
-          time: new Date().toLocaleTimeString(),
-        };
-
-        // 模拟延迟后推送消息
-        await new Promise(r => setTimeout(r, 1500));
-        store.chat.messages.push(aiMsg);
-        const msgIdx = store.chat.messages.length - 1;
-        this.loading = false;
-
-        // 启动打字效果
-        this.$nextTick(() => {
-          this.startTyping(fullContent, msgIdx);
-        });
+        try {
+          const data = await window.Api.startChat(store.diagnosis.result);
+          store.chat.sessionId = data.session_id;
+          this.openStream('');
+        } catch (e) {
+          this.loading = false;
+          store.showToast(e.message || 'AI 分析请求失败', 'error');
+        }
       },
 
-      // ── 发送消息 ──
-      async sendMessage() {
+      // ── 附件图片：选择 / 移除 ──
+      onAttachClick() {
+        if (this.loading) return;
+        this.$refs.fileInput.click();
+      },
+      onImageSelected(e) {
+        const file = e.target.files[0];
+        e.target.value = ''; // 允许重复选择同一文件
+        if (!file) return;
+        this.pendingImage = file;
+        this.pendingImageUrl = URL.createObjectURL(file);
+      },
+      clearPendingImage() {
+        this.pendingImage = null;
+        this.pendingImageUrl = null;
+      },
+
+      // ── 发送消息（文字 / 图片均可，图片会先交给分类模型识别，再由 Agent 生成建议） ──
+      sendMessage() {
         const text = this.inputText.trim();
-        if (!text || this.loading) return;
+        const file = this.pendingImage;
+        if ((!text && !file) || this.loading) return;
+
+        // 未经过诊断页直接进入对话时，本地生成一个会话 id，保证多轮追问落在同一会话
+        if (!store.chat.sessionId) {
+          store.chat.sessionId = 'anon-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        }
 
         store.chat.messages.push({
           role: 'user',
           content: text,
+          imageUrl: this.pendingImageUrl,
           time: new Date().toLocaleTimeString(),
         });
         this.inputText = '';
-        this.loading = true;
+        this.pendingImage = null;
+        this.pendingImageUrl = null;
         this.scrollToBottom();
 
-        // 模拟 AI 回复
-        await new Promise(r => setTimeout(r, 2000));
-        const replyContent = `关于"${text}"，作为农业病虫害防治专家，建议您注意以下几点：\n\n1. 及时观察作物生长状况，发现异常尽早处理\n2. 遵循"预防为主，综合防治"的原则\n3. 在专业农技人员指导下合理用药\n\n如需更详细的方案，请上传叶片图片进行诊断分析。`;
+        if (file) {
+          this.sendImageMessage(file);
+        } else {
+          this.openStream(text);
+        }
+      },
 
-        store.chat.messages.push({
-          role: 'assistant',
-          content: replyContent,
-          time: new Date().toLocaleTimeString(),
-        });
-        const msgIdx = store.chat.messages.length - 1;
-        this.loading = false;
-
-        // 启动打字效果
-        this.$nextTick(() => {
-          this.startTyping(replyContent, msgIdx);
-        });
+      // ── 图片消息：先调用分类模型识别，再让 Agent 基于识别结果流式生成建议 ──
+      async sendImageMessage(file) {
+        this.loading = true;
+        try {
+          const predictData = await window.Api.predict(file);
+          store.setDiagnosisResult(predictData);
+          const startData = await window.Api.startChat(predictData);
+          store.chat.sessionId = startData.session_id;
+          this.openStream('');
+        } catch (e) {
+          this.loading = false;
+          store.showToast(e.message || '图片识别失败', 'error');
+        }
       },
 
       scrollToBottom() {
@@ -193,8 +265,11 @@ window.makePageChat = function () {
                   · 直接问我病害防治问题<br>
                   · 上传图片让我看看
                 </div>
-                <button class="btn btn-primary" style="margin:20px auto 0;max-width:280px;" @click="goDiagnose">
-                  🔍 先去诊断一张图片
+                <button class="btn btn-primary" style="margin:20px auto 0;max-width:280px;" @click="onAttachClick">
+                  📷 直接在这里上传图片
+                </button>
+                <button class="btn btn-outline" style="margin:10px auto 0;max-width:280px;" @click="goDiagnose">
+                  🔍 去诊断页查看完整流程
                 </button>
                 <div class="welcome-divider"></div>
                 <div class="welcome-suggest-label">💡 试试问我：</div>
@@ -216,7 +291,12 @@ window.makePageChat = function () {
                 <div class="chat-avatar">{{ msg.role === 'assistant' ? '🤖' : '👤' }}</div>
                 <div>
                   <div class="chat-bubble-inner">
-                    <div style="white-space:pre-wrap;">{{ getMsgContent(msg, idx) }}</div>
+                    <img
+                      v-if="msg.imageUrl"
+                      :src="msg.imageUrl"
+                      style="max-width:200px;max-height:200px;border-radius:12px;display:block;margin-bottom:8px;object-fit:cover;"
+                    />
+                    <div v-if="getMsgContent(msg, idx)" style="white-space:pre-wrap;">{{ getMsgContent(msg, idx) }}</div>
                     <!-- 打字光标 -->
                     <span
                       v-if="idx === typingMsgIdx"
@@ -238,8 +318,28 @@ window.makePageChat = function () {
               </div>
             </div>
 
+            <!-- ═══ 待发送图片预览 ═══ -->
+            <div v-if="pendingImageUrl" style="display:flex;align-items:center;gap:10px;padding:8px 0;">
+              <div style="position:relative;">
+                <img :src="pendingImageUrl" style="width:56px;height:56px;border-radius:10px;object-fit:cover;display:block;" />
+                <button
+                  @click="clearPendingImage"
+                  style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#546E7A;color:#fff;border:none;cursor:pointer;font-size:12px;line-height:1;"
+                >×</button>
+              </div>
+              <span style="font-size:13px;color:var(--color-text-hint);">将自动识别病害并生成防治建议</span>
+            </div>
+
             <!-- ═══ 输入区 ═══ -->
             <div class="chat-input-bar">
+              <input type="file" accept="image/*" ref="fileInput" style="display:none;" @change="onImageSelected" />
+              <button
+                class="btn btn-outline"
+                style="min-width:44px;padding:0;flex-shrink:0;"
+                :disabled="loading"
+                title="上传叶片图片，自动识别病害"
+                @click="onAttachClick"
+              >📷</button>
               <input
                 v-model="inputText"
                 placeholder="输入你的问题，如：用什么药效果好？"
@@ -250,7 +350,7 @@ window.makePageChat = function () {
                 class="btn btn-primary"
                 :class="{ 'is-loading': loading }"
                 style="min-width:64px;"
-                :disabled="!inputText.trim() || loading"
+                :disabled="(!inputText.trim() && !pendingImage) || loading"
                 @click="sendMessage"
               >
                 {{ loading ? '' : '→' }}
@@ -279,11 +379,18 @@ window.makePageChat = function () {
               </div>
             </div>
 
-            <!-- 纠错状态 -->
+            <!-- 纠错状态：模型 + Agent 视觉复核双重判断 -->
             <div class="panel-card">
               <div class="panel-card-title">🔍 AI 纠错状态</div>
-              <div v-if="messages.length" style="font-size:14px;color:var(--color-success);">
-                ✅ 模型 + AI 双重确认
+              <div v-if="reviewInfo">
+                <div
+                  style="font-size:14px;font-weight:600;"
+                  :style="{ color: { green:'var(--color-success)', yellow:'var(--color-warning)', orange:'var(--color-accent)', gray:'#999' }[reviewInfo.level] }"
+                >{{ reviewInfo.text }}</div>
+                <div v-if="reviewInfo.detail" style="font-size:12px;color:#999;margin-top:4px;">{{ reviewInfo.detail }}</div>
+                <div v-if="reviewInfo.evidence.length" style="font-size:12px;color:#888;margin-top:6px;line-height:1.7;">
+                  <div v-for="(e, i) in reviewInfo.evidence" :key="i">· {{ e }}</div>
+                </div>
               </div>
               <div v-else style="font-size:13px;color:#999;">
                 等待 AI 分析...

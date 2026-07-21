@@ -546,7 +546,7 @@
 .chat-layout {
   display: flex;
   gap: var(--space-lg);
-  height: calc(100vh - 80px);
+  height: calc(100vh - var(--topbar-height) - var(--space-lg) - var(--space-2xl));
   min-height: 500px;
 }
 

@@ -53,12 +53,21 @@ window.Api = {
     return this.request('GET', '/api/health');
   },
 
-  // ── AI 对话（预留，后续实现） ──
-  startChat(file, sessionId) {
-    const fd = new FormData();
-    fd.append('file', file);
-    if (sessionId) fd.append('session_id', sessionId);
-    return this.request('POST', '/api/chat/start', fd);
+  // ── AI 对话（SSE 真流式） ──
+  startChat(diagnosisResult) {
+    return this.request('POST', '/api/chat/start', {
+      id: diagnosisResult.id,
+      image_url: diagnosisResult.image_url,
+      top1: diagnosisResult.top1,
+    });
+  },
+  /**
+   * 打开一条 SSE 流。text 为空 = 首轮诊断开场白，非空 = 多轮追问。
+   * 返回原生 EventSource，调用方负责监听 message/close。
+   */
+  streamChat(sessionId, text) {
+    const qs = text ? `?text=${encodeURIComponent(text)}` : '';
+    return new EventSource(`/api/chat/stream/${sessionId}${qs}`);
   },
 
   // ── 数据贡献（预留） ──
