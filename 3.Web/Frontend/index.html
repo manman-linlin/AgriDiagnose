@@ -60,6 +60,19 @@
 
     <!-- 右侧用户区 -->
     <div class="topbar-actions">
+      <!-- 管理员登录/退出 -->
+      <template v-if="admin.loggedIn">
+        <div class="admin-badge" @click="doAdminLogout" title="点击退出">
+          <span>👤</span>
+          <span>管理员</span>
+          <span class="admin-logout-hint">退出</span>
+        </div>
+      </template>
+      <template v-else>
+        <button class="btn-admin-login" @click="showLoginModal">
+          🔒 管理员登录
+        </button>
+      </template>
       <div class="topbar-user">
         <div class="user-avatar">G</div>
         <span class="user-name">游客</span>
@@ -78,6 +91,41 @@
 
   <!-- 侧边栏遮罩（手机端） -->
   <div class="sidebar-overlay" :class="{ open: sidebarOpen }" @click="closeSidebar"></div>
+
+  <!-- ═══ 管理员登录弹窗 ═══ -->
+  <div v-if="admin.showLoginModal" class="modal-overlay" @click.self="showLoginModal">
+    <div class="modal-dialog">
+      <button class="modal-close" @click="showLoginModal">✕</button>
+      <div class="modal-header">
+        <div class="modal-icon">🔒</div>
+        <h2 class="modal-title">管理员登录</h2>
+        <p class="modal-subtitle">请输入管理员密码以审核用户提交的数据</p>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <input
+            type="password"
+            class="form-input"
+            v-model="admin.loginPassword"
+            placeholder="请输入管理员密码"
+            @keyup.enter="doAdminLogin"
+            autofocus
+          />
+        </div>
+        <div v-if="admin.loginError" class="form-error-msg" style="margin-bottom:12px;">
+          ⚠️ {{ admin.loginError }}
+        </div>
+        <button
+          class="btn btn-primary btn-block"
+          :disabled="admin.loginLoading"
+          @click="doAdminLogin"
+        >
+          {{ admin.loginLoading ? '⏳ 登录中...' : '🔑 登录' }}
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- 主内容区（唯一可滚动区域） -->
   <main class="main-content">

@@ -42,6 +42,16 @@ window.AppStore = Vue.reactive({
     timer: null,
   },
 
+  // ── 管理员状态 ──
+  admin: {
+    loggedIn: false,
+    token: null,
+    showLoginModal: false,
+    loginPassword: '',
+    loginError: '',
+    loginLoading: false,
+  },
+
   // ── 方法 ──
 
   /** 重置诊断状态 */
@@ -86,5 +96,60 @@ window.AppStore = Vue.reactive({
       this.system.modelReady = false;
     }
     this.system.healthChecked = true;
+  },
+
+  // ── 管理员方法 ──
+
+  /** 尝试从 localStorage 恢复管理员登录态 */
+  restoreAdminSession() {
+    const saved = localStorage.getItem('agridiag_admin_token');
+    if (saved) {
+      this.admin.token = saved;
+      this.admin.loggedIn = true;
+    }
+  },
+
+  /** 管理员登录 */
+  async adminLogin() {
+    const pwd = this.admin.loginPassword;
+    if (!pwd) {
+      this.admin.loginError = '请输入密码';
+      return;
+    }
+    this.admin.loginLoading = true;
+    this.admin.loginError = '';
+    try {
+      const data = await window.Api.adminLogin(pwd);
+      this.admin.token = data.token;
+      this.admin.loggedIn = true;
+      this.admin.loginPassword = '';
+      this.admin.showLoginModal = false;
+      localStorage.setItem('agridiag_admin_token', data.token);
+      this.showToast('管理员登录成功', 'success');
+    } catch (e) {
+      this.admin.loginError = e.message || '登录失败';
+    } finally {
+      this.admin.loginLoading = false;
+    }
+  },
+
+  /** 管理员退出 */
+  adminLogout() {
+    window.Api.adminLogout().catch(() => {});
+    this.admin.token = null;
+    this.admin.loggedIn = false;
+    this.admin.loginPassword = '';
+    this.admin.loginError = '';
+    localStorage.removeItem('agridiag_admin_token');
+    this.showToast('已退出管理员账号', 'warning', 2000);
+  },
+
+  /** 打开/关闭登录弹窗 */
+  toggleLoginModal() {
+    this.admin.showLoginModal = !this.admin.showLoginModal;
+    if (!this.admin.showLoginModal) {
+      this.admin.loginPassword = '';
+      this.admin.loginError = '';
+    }
   },
 });

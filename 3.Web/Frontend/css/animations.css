@@ -272,6 +272,11 @@
   animation-delay: calc(var(--i, 0) * 100ms);
 }
 
+/* ── 模式选择卡片错位 ── */
+.mode-card.stagger-item {
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+
 /* ══════════════════════════════════════════════════════════════
    5. 滚动触发揭示（配合 IntersectionObserver 使用）
    初始状态 opacity:0，JS 添加 .revealed 后触发动画

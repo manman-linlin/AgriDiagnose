@@ -11,8 +11,13 @@ window.Api = {
    * @param {*}      body   - 请求体（FormData 或普通对象）
    * @returns {Promise} 直接返回 data.data 业务数据
    */
-  async request(method, path, body) {
+  async request(method, path, body, skipAuth = false) {
     const config = { method, headers: {} };
+
+    // 自动附加管理员 token（如有）
+    if (!skipAuth && window.AppStore && window.AppStore.admin && window.AppStore.admin.token) {
+      config.headers['Authorization'] = 'Bearer ' + window.AppStore.admin.token;
+    }
 
     if (body && !(body instanceof FormData)) {
       config.headers['Content-Type'] = 'application/json';
@@ -23,6 +28,13 @@ window.Api = {
 
     const res = await fetch(path, config);
     const data = await res.json();
+
+    // 401 时自动清除过期 token
+    if (data.code === 401 && window.AppStore && window.AppStore.admin) {
+      window.AppStore.admin.token = null;
+      window.AppStore.admin.loggedIn = false;
+      localStorage.removeItem('agridiag_admin_token');
+    }
 
     if (data.code !== 200) {
       throw new Error(data.message || '请求失败');
@@ -95,5 +107,19 @@ window.Api = {
   },
   getEncyclopediaCrops() {
     return this.request('GET', '/api/encyclopedia/crops');
+  },
+
+  // ── 管理员 ──
+  adminLogin(password) {
+    return this.request('POST', '/api/admin/login', { password: password }, true);
+  },
+  adminLogout() {
+    return this.request('POST', '/api/admin/logout', null);
+  },
+  adminReview(id, approved, notes) {
+    return this.request('POST', `/api/admin/review/${id}`, {
+      approved: approved,
+      notes: notes || '',
+    });
   },
 };

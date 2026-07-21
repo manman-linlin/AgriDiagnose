@@ -27,6 +27,9 @@
       system: function () {
         return window.AppStore.system;
       },
+      admin: function () {
+        return window.AppStore.admin;
+      },
     },
 
     methods: {
@@ -38,6 +41,11 @@
       },
       toggleSidebar: function () { this.sidebarOpen = !this.sidebarOpen; },
       closeSidebar: function ()  { this.sidebarOpen = false; },
+
+      // ── 管理员桥接方法 ──
+      showLoginModal: function () { window.AppStore.toggleLoginModal(); },
+      doAdminLogin:  function () { window.AppStore.adminLogin(); },
+      doAdminLogout: function () { window.AppStore.adminLogout(); },
     },
 
     mounted: function () {
@@ -47,8 +55,9 @@
         _origNavigate(targetPage);
         vue.page = window.AppRouter.current;
       };
-      // 启动时检查模型状态
+      // 启动时检查模型状态 + 恢复管理员会话
       window.AppStore.checkHealth();
+      window.AppStore.restoreAdminSession();
     },
   });
 

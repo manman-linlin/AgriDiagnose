@@ -182,7 +182,9 @@
   .disease-grid { grid-template-columns: 1fr; }
 
   /* 模态选择 */
-  .mode-cards { flex-direction: column; }
+  .mode-cards {
+    grid-template-columns: 1fr;
+  }
 
   /* 操作入口 */
   .action-cards { flex-direction: column; }

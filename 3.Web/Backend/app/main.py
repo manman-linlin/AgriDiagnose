@@ -5,19 +5,23 @@
 
 import io
 import json
+import os
+import secrets
 import time
 import uuid
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import Body, FastAPI, File, UploadFile
+from fastapi import Body, Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 from PIL import Image
 
 from app.services import agent_service
 from app.services.classifier import classifier
+from app.services.collector import collector_service
 
 app = FastAPI(title="农作物病虫害诊断系统", version="1.0")
 
@@ -32,6 +36,7 @@ app.add_middleware(
 # ── 路径 ────────────────────────────────────────────
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "Frontend"
+MODEL_DATA_DIR = Path(__file__).resolve().parents[4] / "2.Model" / "Data"
 UPLOADS_DIR = BACKEND_DIR / "uploads"
 LOGS_DIR = BACKEND_DIR / "logs"
 HISTORY_FILE = LOGS_DIR / "history.json"
@@ -43,6 +48,8 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 if FRONTEND_DIR.is_dir():
     app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+if MODEL_DATA_DIR.is_dir():
+    app.mount("/model-data", StaticFiles(directory=str(MODEL_DATA_DIR)), name="model-data")
 
 
 # ── 历史记录读写 ────────────────────────────────────
@@ -166,6 +173,174 @@ def get_stats():
         counter[label] = counter.get(label, 0) + 1
     data = [{"name": k, "value": v} for k, v in sorted(counter.items(), key=lambda x: -x[1])]
     return {"code": 200, "data": data, "total": len(history)}
+
+
+# ── 数据贡献（收集模块）──────────────────────────────
+@app.post("/api/contribute")
+async def contribute(
+    mode: str = Form(...),
+    files: list[UploadFile] = File(...),
+    existing_class: str = Form(""),
+    crop_name: str = Form(""),
+    disease_name: str = Form(""),
+    disease_description: str = Form(""),
+    location: str = Form(""),
+    photo_date: str = Form(""),
+    notes: str = Form(""),
+):
+    """用户提交数据贡献：上传标注图片，扩展训练数据集。"""
+    # ── 参数校验 ──
+    if mode not in {"extend", "new"}:
+        return JSONResponse(status_code=400, content={"code": 400, "message": "mode 只能为 'extend' 或 'new'"})
+
+    if mode == "extend" and not existing_class.strip():
+        return JSONResponse(status_code=400, content={"code": 400, "message": "扩展模式下必须选择病害类别"})
+
+    if mode == "new":
+        if not crop_name.strip():
+            return JSONResponse(status_code=400, content={"code": 400, "message": "新增模式下作物名称为必填"})
+        if not disease_name.strip():
+            return JSONResponse(status_code=400, content={"code": 400, "message": "新增模式下病害名称为必填"})
+
+    # ── 过滤并读取图片 ──
+    images: list[Image.Image] = []
+    for f in files:
+        if not f.content_type or not f.content_type.startswith("image/"):
+            continue
+        try:
+            contents = await f.read()
+            images.append(Image.open(io.BytesIO(contents)))
+        except Exception:
+            continue
+
+    if not images:
+        return JSONResponse(status_code=400, content={"code": 400, "message": "请至少上传一张有效图片"})
+
+    # ── 提交 ──
+    try:
+        record = collector_service.submit(
+            mode=mode,
+            images=images,
+            existing_class=existing_class.strip(),
+            crop_name=crop_name.strip(),
+            disease_name=disease_name.strip(),
+            disease_description=disease_description.strip(),
+            location=location.strip(),
+            photo_date=photo_date.strip(),
+            notes=notes.strip(),
+        )
+        return {
+            "code": 200,
+            "message": "提交成功，感谢您的贡献！",
+            "data": {"id": record["id"]},
+        }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"code": 500, "message": f"提交失败: {str(e)}"})
+
+
+@app.get("/api/contribute/list")
+def contribute_list(status: str = ""):
+    """获取贡献记录列表，可按审核状态筛选。"""
+    try:
+        records = collector_service.list_contributions(status=status if status else None)
+        return {"code": 200, "data": records, "total": len(records)}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"code": 500, "message": f"获取失败: {str(e)}"})
+
+
+@app.get("/api/contribute/stats")
+def contribute_stats():
+    """获取贡献统计数据。"""
+    try:
+        stats = collector_service.get_stats()
+        return {"code": 200, "data": stats}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"code": 500, "message": f"获取失败: {str(e)}"})
+
+
+@app.get("/api/contribute/classes")
+def contribute_classes():
+    """获取已有 38 类病害中英文对照列表，供前端下拉选择器使用。"""
+    try:
+        classes = collector_service.get_classes()
+        return {"code": 200, "data": classes}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"code": 500, "message": f"获取失败: {str(e)}"})
+
+
+# ── Pydantic 模型 ─────────────────────────────────────
+class AdminLoginRequest(BaseModel):
+    password: str
+
+
+class AdminReviewRequest(BaseModel):
+    approved: bool = False
+    notes: str = ""
+
+
+# ── 管理员认证 ────────────────────────────────────────
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
+ADMIN_TOKENS: set[str] = set()
+
+
+def _require_admin(authorization: str = Header("")) -> None:
+    """FastAPI 依赖：验证 Bearer token，未通过抛出 401。"""
+    if not authorization.startswith("Bearer "):
+        raise _auth_error()
+    token = authorization[len("Bearer "):]
+    if token not in ADMIN_TOKENS:
+        raise _auth_error()
+
+
+def _auth_error():
+    raise HTTPException(status_code=401, detail="请先登录管理员账号")
+
+
+# ── 管理员 API ───────────────────────────────────────
+@app.post("/api/admin/login")
+def admin_login(payload: AdminLoginRequest):
+    """管理员密码登录，返回一次性 token。"""
+    if payload.password != ADMIN_PASSWORD:
+        return JSONResponse(status_code=401, content={"code": 401, "message": "密码错误"})
+    token = secrets.token_hex(32)
+    ADMIN_TOKENS.add(token)
+    return {"code": 200, "data": {"token": token}}
+
+
+@app.post("/api/admin/logout")
+def admin_logout(authorization: str = Header("")):
+    """退出登录，销毁 token。"""
+    if authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):]
+        ADMIN_TOKENS.discard(token)
+    return {"code": 200, "message": "已退出"}
+
+
+@app.post("/api/admin/review/{contribution_id}")
+def admin_review(
+    contribution_id: str,
+    _: None = Depends(_require_admin),
+    payload: AdminReviewRequest = Body(...),
+):
+    """审核一条贡献记录（需管理员登录）。"""
+    success = collector_service.review(contribution_id, payload.approved, payload.notes)
+    if not success:
+        return JSONResponse(status_code=404, content={"code": 404, "message": "未找到该贡献记录"})
+    status_text = "已采纳" if payload.approved else "已驳回"
+    return {"code": 200, "message": f"审核完成：{status_text}"}
+
+
+@app.get("/api/admin/contributions")
+def admin_contributions(
+    status: str = "",
+    _: None = Depends(_require_admin),
+):
+    """管理员视角获取全部贡献记录（含审核操作数据）。"""
+    try:
+        records = collector_service.list_contributions(status=status if status else None)
+        return {"code": 200, "data": records, "total": len(records)}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"code": 500, "message": f"获取失败: {str(e)}"})
 
 
 # ── AI 对话（Agent 模块，SSE 真流式）──────────────────
