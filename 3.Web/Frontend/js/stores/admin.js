@@ -57,6 +57,8 @@ export const useAdminStore = defineStore('admin', () => {
       setToken(data.token);
       localStorage.setItem(STORAGE_KEY, data.token);
       ui.showToast('管理员登录成功', 'success');
+      // 直接跳转管理后台
+      location.hash = '#/admin/dashboard';
     } catch (e) {
       state.loginError = e.message || '登录失败';
     } finally {
@@ -71,6 +73,10 @@ export const useAdminStore = defineStore('admin', () => {
     state.loginPassword = '';
     state.loginError = '';
     ui.showToast('已退出管理员账号', 'warning', 2000);
+    // 如果当前在管理后台，退出后跳回首页
+    if ((location.hash || '').startsWith('#/admin')) {
+      location.hash = '#/diagnose';
+    }
   }
 
   function toggleLoginModal() {

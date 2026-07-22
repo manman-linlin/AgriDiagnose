@@ -8,7 +8,7 @@ import { health } from '../api/index.js';
 export const useUiStore = defineStore('ui', () => {
   const toast = reactive({
     visible: false,
-    type: 'success',   // 'success' | 'error' | 'warning'
+    type: 'success',   // 'success' | 'error' | 'warning' | 'info'
     message: '',
     timer: null,
   });
@@ -16,7 +16,11 @@ export const useUiStore = defineStore('ui', () => {
   const system = reactive({
     modelReady: false,     // 从 /api/health 获取
     healthChecked: false,
+    offline: false,        // 网络状态
   });
+
+  /** 全局通知中心（持久化到 localStorage） */
+  const notifications = reactive([]);
 
   function showToast(message, type = 'success', duration = 3000) {
     if (toast.timer) clearTimeout(toast.timer);
@@ -26,6 +30,32 @@ export const useUiStore = defineStore('ui', () => {
     toast.timer = setTimeout(() => {
       toast.visible = false;
     }, duration);
+  }
+
+  function addNotification(type, title, message, actionUrl = '') {
+    const item = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      type,
+      title,
+      message,
+      time: new Date().toLocaleString('zh-CN'),
+      read: false,
+      actionUrl,
+    };
+    notifications.unshift(item);
+    // 保留最近 50 条
+    if (notifications.length > 50) notifications.length = 50;
+    try { localStorage.setItem('agridiag_notifications', JSON.stringify(notifications)); } catch {}
+  }
+
+  function restoreNotifications() {
+    try {
+      const saved = localStorage.getItem('agridiag_notifications');
+      if (saved) {
+        const list = JSON.parse(saved);
+        notifications.splice(0, notifications.length, ...list);
+      }
+    } catch {}
   }
 
   async function checkHealth() {
@@ -38,5 +68,17 @@ export const useUiStore = defineStore('ui', () => {
     system.healthChecked = true;
   }
 
-  return { toast, system, showToast, checkHealth };
+  // 网络状态监听
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', () => {
+      system.offline = false;
+      showToast('网络已恢复', 'info', 2000);
+    });
+    window.addEventListener('offline', () => {
+      system.offline = true;
+      showToast('网络连接已断开', 'warning', 0);
+    });
+  }
+
+  return { toast, system, notifications, showToast, addNotification, restoreNotifications, checkHealth };
 });

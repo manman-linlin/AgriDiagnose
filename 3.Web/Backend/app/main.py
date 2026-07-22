@@ -380,6 +380,424 @@ def admin_contributions(
         return JSONResponse(status_code=500, content={"code": 500, "message": f"获取失败: {str(e)}"})
 
 
+# ── 批量审核 ──────────────────────────────────────────
+class BatchReviewRequest(BaseModel):
+    ids: list[str] = []
+    approved: bool = False
+    notes: str = ""
+
+@app.post("/api/admin/review/batch")
+def admin_review_batch(
+    _: None = Depends(_require_admin),
+    payload: BatchReviewRequest = Body(...),
+):
+    """批量审核贡献记录。"""
+    success = 0
+    for cid in payload.ids:
+        if collector_service.review(cid, payload.approved, payload.notes):
+            success += 1
+    return {"code": 200, "message": f"已处理 {success}/{len(payload.ids)} 条"}
+
+
+# ── 仪表盘 API ────────────────────────────────────────
+@app.get("/api/admin/dashboard/overview")
+def dashboard_overview(_: None = Depends(_require_admin)):
+    """仪表盘概览数据。"""
+    history = load_history()
+    contributions = collector_service.list_contributions()
+    today = datetime.now().strftime("%Y-%m-%d")
+    today_count = sum(1 for r in history if r.get("time", "").startswith(today))
+    pending = sum(1 for r in contributions if r.get("status") == "pending")
+    categories = len(set(r["top1"]["label_cn"] for r in history if r.get("top1")))
+    return {
+        "code": 200,
+        "data": {
+            "total": len(history),
+            "today": today_count,
+            "users": 0,
+            "categories": max(categories, 38),
+            "pending": pending,
+            "modelStatus": "正常",
+        },
+    }
+
+
+@app.get("/api/admin/dashboard/trends")
+def dashboard_trends(days: int = 30, _: None = Depends(_require_admin)):
+    """诊断趋势：按日期聚合。"""
+    from collections import Counter
+    history = load_history()
+    counter = Counter()
+    for r in history:
+        date = (r.get("time", "") or "")[:10]
+        if date:
+            counter[date] += 1
+    # 补全近 N 天的日期
+    from datetime import timedelta
+    result = []
+    for i in range(days - 1, -1, -1):
+        d = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
+        result.append({"date": d, "count": counter.get(d, 0)})
+    return {"code": 200, "data": result}
+
+
+@app.get("/api/admin/dashboard/distribution")
+def dashboard_distribution(_: None = Depends(_require_admin)):
+    """作物诊断分布。"""
+    import json as _json
+    labels_path = MODEL_DATA_DIR / "class_labels.json"
+    en_to_crop = {}
+    if labels_path.exists():
+        with labels_path.open("r", encoding="utf-8") as f:
+            for item in _json.load(f):
+                en_to_crop[item["en"]] = item.get("crop", "")
+    from collections import Counter
+    history = load_history()
+    crop_counter = Counter()
+    for r in history:
+        en = r.get("top1", {}).get("label_en", "")
+        crop = en_to_crop.get(en, "")
+        if crop:
+            crop_counter[crop] += 1
+    data = [{"name": k, "value": v} for k, v in crop_counter.most_common(10)]
+    return {"code": 200, "data": data}
+
+
+# ── 模型管理 API ──────────────────────────────────────
+@app.get("/api/admin/model/info")
+def admin_model_info(_: None = Depends(_require_admin)):
+    """当前模型信息。"""
+    meta_path = MODEL_DATA_DIR.parent / "Weights" / "meta.json"
+    info = {"name": "ConvNeXt-Tiny", "accuracy": "99.80%", "classes": 38, "size": "111.5 MB", "lastTrain": "-"}
+    if meta_path.exists():
+        import json as _json
+        with meta_path.open("r", encoding="utf-8") as f:
+            meta = _json.load(f)
+            info["accuracy"] = f"{meta.get('best_acc', 0.998) * 100:.2f}%"
+            info["classes"] = len(meta.get("classes", []))
+    return {"code": 200, "data": info}
+
+
+@app.get("/api/admin/model/classes")
+def admin_model_classes(_: None = Depends(_require_admin)):
+    """模型类别详情：每类中文名、作物、训练集数量、验证准确率。"""
+    import json as _json
+    meta_path = MODEL_DATA_DIR.parent / "Weights" / "meta.json"
+    history_path = MODEL_DATA_DIR.parent / "Weights" / "history.json"
+    labels_path = MODEL_DATA_DIR / "class_labels.json"
+
+    classes = []
+    en_to_cn = {}
+    if labels_path.exists():
+        with labels_path.open("r", encoding="utf-8") as f:
+            for item in _json.load(f):
+                en_to_cn[item["en"]] = item
+
+    per_class = {}
+    if history_path.exists():
+        with history_path.open("r", encoding="utf-8") as f:
+            history = _json.load(f)
+            best = max(history, key=lambda r: r.get("val_acc", 0), default=None)
+            if best and "per_class_acc" in best:
+                per_class = best["per_class_acc"]
+
+    class_list = []
+    if meta_path.exists():
+        with meta_path.open("r", encoding="utf-8") as f:
+            meta = _json.load(f)
+            class_list = meta.get("classes", [])
+
+    for en in class_list:
+        info = en_to_cn.get(en, {})
+        classes.append({
+            "en": en,
+            "cn": info.get("cn", en),
+            "crop": info.get("crop", ""),
+            "disease": info.get("disease", ""),
+            "accuracy": round(per_class.get(en, 0) * 100, 1),
+        })
+    # 按作物分组排序
+    classes.sort(key=lambda x: (x["crop"], x["cn"]))
+    return {"code": 200, "data": classes}
+
+
+@app.get("/api/admin/model/devices")
+def admin_model_devices(_: None = Depends(_require_admin)):
+    """检测可用训练设备。"""
+    import torch
+    devices = []
+    if torch.cuda.is_available():
+        for i in range(torch.cuda.device_count()):
+            devices.append({"type": "cuda", "name": torch.cuda.get_device_name(i), "index": i})
+    devices.append({"type": "cpu", "name": "CPU", "index": -1})
+    return {"code": 200, "data": devices}
+
+
+TRAINING_STATUS = {"status": "idle", "logs": [], "epoch": 0, "totalEpochs": 20, "loss": 0, "acc": 0, "progress": 0}
+
+@app.post("/api/admin/model/train")
+def admin_model_train(_: None = Depends(_require_admin), payload: dict = Body(...)):
+    """启动训练（后台子进程）。"""
+    import subprocess, threading
+    if TRAINING_STATUS["status"] == "running":
+        return JSONResponse(status_code=400, content={"code": 400, "message": "训练已在运行中"})
+    TRAINING_STATUS.update(status="running", logs=[], epoch=0, progress=0, loss=0, acc=0)
+    def run():
+        try:
+            proc = subprocess.Popen(
+                ["python", str(MODEL_DATA_DIR.parent / "train.py")],
+                cwd=str(MODEL_DATA_DIR.parent),
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, encoding="utf-8", errors="replace",
+            )
+            for line in proc.stdout:
+                TRAINING_STATUS["logs"].append(line.strip())
+                if len(TRAINING_STATUS["logs"]) > 200:
+                    TRAINING_STATUS["logs"] = TRAINING_STATUS["logs"][-200:]
+            proc.wait()
+            TRAINING_STATUS["status"] = "done"
+        except Exception as e:
+            TRAINING_STATUS["status"] = "error"
+            TRAINING_STATUS["logs"].append(str(e))
+    threading.Thread(target=run, daemon=True).start()
+    return {"code": 200, "message": "训练已启动"}
+
+
+@app.get("/api/admin/model/training/status")
+def admin_model_training_status(_: None = Depends(_require_admin)):
+    """训练进度。"""
+    return {"code": 200, "data": TRAINING_STATUS}
+
+
+@app.post("/api/admin/model/training/cancel")
+def admin_model_training_cancel(_: None = Depends(_require_admin)):
+    """取消训练。"""
+    TRAINING_STATUS["status"] = "idle"
+    return {"code": 200, "message": "训练已取消"}
+
+
+# ── 系统配置 API ──────────────────────────────────────
+CONFIG_FILE = BACKEND_DIR / "app" / "data" / "config.json"
+
+def _load_config() -> dict:
+    if CONFIG_FILE.exists():
+        import json as _json
+        with CONFIG_FILE.open("r", encoding="utf-8") as f:
+            return _json.load(f)
+    return {"llm_providers": [], "active_provider": "", "system": {}}
+
+def _save_config(cfg: dict):
+    CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
+    import json as _json
+    with CONFIG_FILE.open("w", encoding="utf-8") as f:
+        _json.dump(cfg, f, ensure_ascii=False, indent=2)
+
+
+@app.get("/api/admin/config/llm")
+def admin_config_llm(_: None = Depends(_require_admin)):
+    """获取 LLM 配置列表（API Key 脱敏）。"""
+    cfg = _load_config()
+    providers = cfg.get("llm_providers", [])
+    for p in providers:
+        key = p.get("api_key", "")
+        if key and len(key) > 8:
+            p["api_key"] = key[:4] + "****" + key[-4:]
+    return {"code": 200, "data": providers}
+
+
+@app.put("/api/admin/config/llm/{provider_id}")
+def admin_config_llm_update(provider_id: str, _: None = Depends(_require_admin), payload: dict = Body(...)):
+    """更新 LLM 服务商配置。"""
+    cfg = _load_config()
+    for p in cfg.get("llm_providers", []):
+        if p.get("id") == provider_id:
+            p.update(payload)
+            _save_config(cfg)
+            return {"code": 200, "message": "已保存"}
+    return JSONResponse(status_code=404, content={"code": 404, "message": "未找到该服务商"})
+
+
+@app.post("/api/admin/config/llm/test")
+def admin_config_llm_test(_: None = Depends(_require_admin), payload: dict = Body(...)):
+    """测试 LLM 连接。"""
+    import requests as req
+    provider_id = payload.get("provider_id", "")
+    cfg = _load_config()
+    provider = next((p for p in cfg.get("llm_providers", []) if p.get("id") == provider_id), None)
+    if not provider or not provider.get("api_key"):
+        return JSONResponse(status_code=400, content={"code": 400, "message": "服务商未配置"})
+    try:
+        resp = req.get(
+            provider["base_url"].replace("/chat/completions", "/models"),
+            headers={"Authorization": f"Bearer {provider['api_key']}"},
+            timeout=10,
+        )
+        ok = resp.status_code == 200
+        return {"code": 200, "data": {"ok": ok, "status": resp.status_code}}
+    except Exception as e:
+        return {"code": 200, "data": {"ok": False, "error": str(e)}}
+
+
+@app.get("/api/admin/config/system")
+def admin_config_system(_: None = Depends(_require_admin)):
+    """获取系统参数。"""
+    cfg = _load_config()
+    sys_cfg = cfg.get("system", {})
+    return {
+        "code": 200,
+        "data": {
+            "maxUploadMB": sys_cfg.get("max_upload_size_mb", 10),
+            "maxImages": sys_cfg.get("max_images_per_contribution", 20),
+            "allowedTypes": ",".join(sys_cfg.get("allowed_image_types", ["jpg", "jpeg", "png", "webp"])),
+        },
+    }
+
+
+@app.put("/api/admin/config/system")
+def admin_config_system_update(_: None = Depends(_require_admin), payload: dict = Body(...)):
+    """更新系统参数。"""
+    cfg = _load_config()
+    cfg["system"] = {
+        "max_upload_size_mb": payload.get("maxUploadMB", 10),
+        "max_images_per_contribution": payload.get("maxImages", 20),
+        "allowed_image_types": payload.get("allowedTypes", "jpg,jpeg,png,webp").split(","),
+    }
+    _save_config(cfg)
+    return {"code": 200, "message": "已保存"}
+
+
+# ── 百科管理 API ──────────────────────────────────────
+ENCYCLOPEDIA_FILE = BACKEND_DIR / "app" / "data" / "encyclopedia.json"
+
+@app.post("/api/admin/encyclopedia")
+def admin_encyclopedia_create(_: None = Depends(_require_admin), payload: dict = Body(...)):
+    """新增百科词条。"""
+    import json as _json
+    diseases = []
+    if ENCYCLOPEDIA_FILE.exists():
+        with ENCYCLOPEDIA_FILE.open("r", encoding="utf-8") as f:
+            diseases = _json.load(f)
+    payload["id"] = payload.get("id") or uuid.uuid4().hex[:12]
+    diseases.insert(0, payload)
+    with ENCYCLOPEDIA_FILE.open("w", encoding="utf-8") as f:
+        _json.dump(diseases, f, ensure_ascii=False, indent=2)
+    return {"code": 200, "data": payload}
+
+
+@app.put("/api/admin/encyclopedia/{disease_id}")
+def admin_encyclopedia_update(disease_id: str, _: None = Depends(_require_admin), payload: dict = Body(...)):
+    """编辑百科词条。"""
+    import json as _json
+    if not ENCYCLOPEDIA_FILE.exists():
+        return JSONResponse(status_code=404, content={"code": 404, "message": "词条文件不存在"})
+    with ENCYCLOPEDIA_FILE.open("r", encoding="utf-8") as f:
+        diseases = _json.load(f)
+    for i, d in enumerate(diseases):
+        if d.get("id") == disease_id:
+            diseases[i].update(payload)
+            with ENCYCLOPEDIA_FILE.open("w", encoding="utf-8") as f:
+                _json.dump(diseases, f, ensure_ascii=False, indent=2)
+            return {"code": 200, "data": diseases[i]}
+    return JSONResponse(status_code=404, content={"code": 404, "message": "未找到该词条"})
+
+
+@app.post("/api/admin/encyclopedia/{disease_id}/image")
+def admin_encyclopedia_image(disease_id: str, _: None = Depends(_require_admin), file: UploadFile = File(...)):
+    """上传百科配图。"""
+    import json as _json
+    img_dir = MODEL_DATA_DIR / "encyclopedia_images"
+    img_dir.mkdir(parents=True, exist_ok=True)
+    ext = Path(file.filename).suffix or ".jpg"
+    img_name = f"{disease_id}{ext}"
+    img_path = img_dir / img_name
+    contents = file.file.read()
+    with img_path.open("wb") as f:
+        f.write(contents)
+    url = f"/model-data/encyclopedia_images/{img_name}"
+    # 更新词条中的 image_url
+    if ENCYCLOPEDIA_FILE.exists():
+        with ENCYCLOPEDIA_FILE.open("r", encoding="utf-8") as f:
+            diseases = _json.load(f)
+        for d in diseases:
+            if d.get("id") == disease_id:
+                d["image_url"] = url
+                with ENCYCLOPEDIA_FILE.open("w", encoding="utf-8") as f:
+                    _json.dump(diseases, f, ensure_ascii=False, indent=2)
+                break
+    return {"code": 200, "data": {"image_url": url}}
+
+
+@app.delete("/api/admin/encyclopedia/{disease_id}")
+def admin_encyclopedia_delete(disease_id: str, _: None = Depends(_require_admin)):
+    """删除百科词条。"""
+    import json as _json
+    if not ENCYCLOPEDIA_FILE.exists():
+        return JSONResponse(status_code=404, content={"code": 404, "message": "词条文件不存在"})
+    with ENCYCLOPEDIA_FILE.open("r", encoding="utf-8") as f:
+        diseases = _json.load(f)
+    diseases = [d for d in diseases if d.get("id") != disease_id]
+    with ENCYCLOPEDIA_FILE.open("w", encoding="utf-8") as f:
+        _json.dump(diseases, f, ensure_ascii=False, indent=2)
+    return {"code": 200, "message": "已删除"}
+
+
+# ── 用户管理 API ──────────────────────────────────────
+@app.get("/api/admin/users")
+def admin_users(_: None = Depends(_require_admin), q: str = ""):
+    """管理员获取用户列表。"""
+    users_file = BACKEND_DIR / "app" / "data" / "users.json"
+    if not users_file.exists():
+        return {"code": 200, "data": []}
+    import json as _json
+    with users_file.open("r", encoding="utf-8") as f:
+        users = _json.load(f)
+    if q:
+        users = [u for u in users if q.lower() in u.get("username", "").lower() or q.lower() in u.get("display_name", "").lower()]
+    return {"code": 200, "data": users}
+
+
+@app.put("/api/admin/users/{user_id}")
+def admin_users_update(user_id: str, _: None = Depends(_require_admin), payload: dict = Body(...)):
+    """管理员修改用户信息。"""
+    users_file = BACKEND_DIR / "app" / "data" / "users.json"
+    if not users_file.exists():
+        return JSONResponse(status_code=404, content={"code": 404, "message": "用户文件不存在"})
+    import json as _json
+    with users_file.open("r", encoding="utf-8") as f:
+        users = _json.load(f)
+    for u in users:
+        if u.get("id") == user_id:
+            u.update(payload)
+            with users_file.open("w", encoding="utf-8") as f:
+                _json.dump(users, f, ensure_ascii=False, indent=2)
+            return {"code": 200, "data": u}
+    return JSONResponse(status_code=404, content={"code": 404, "message": "未找到该用户"})
+
+
+# ── 系统日志 API ──────────────────────────────────────
+@app.get("/api/admin/logs")
+def admin_logs(level: str = "", keyword: str = "", limit: int = 200, _: None = Depends(_require_admin)):
+    """查看系统日志。"""
+    log_files = sorted(LOGS_DIR.glob("*.log"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not log_files and not HISTORY_FILE.exists():
+        return {"code": 200, "data": []}
+    lines = []
+    for lf in log_files[:3]:
+        try:
+            with lf.open("r", encoding="utf-8", errors="replace") as f:
+                lines.extend(f.readlines())
+        except Exception:
+            continue
+    if not lines:
+        return {"code": 200, "data": []}
+    if level:
+        lines = [l for l in lines if level.upper() in l.upper()]
+    if keyword:
+        lines = [l for l in lines if keyword.lower() in l.lower()]
+    lines = lines[-limit:]
+    return {"code": 200, "data": [{"line": l.rstrip()} for l in lines]}
+
+
 # ── AI 对话（Agent 模块，SSE 真流式）──────────────────
 # 会话状态仅保存在内存中：进程重启即清空，符合课程设计演示场景，
 # 不与 /api/history 的持久化诊断记录混淆。

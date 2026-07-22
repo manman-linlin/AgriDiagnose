@@ -83,3 +83,91 @@ export function adminReview(id, approved, notes) {
     notes: notes || '',
   });
 }
+export function adminBatchReview(ids, approved, notes) {
+  return request('POST', '/api/admin/review/batch', { ids, approved, notes: notes || '' });
+}
+
+// ── 管理后台：仪表盘 ──
+export function adminDashboardOverview() {
+  return request('GET', '/api/admin/dashboard/overview');
+}
+export function adminDashboardTrends(days = 30) {
+  return request('GET', `/api/admin/dashboard/trends?days=${days}`);
+}
+export function adminDashboardDistribution() {
+  return request('GET', '/api/admin/dashboard/distribution');
+}
+
+// ── 管理后台：模型管理 ──
+export function adminModelInfo() {
+  return request('GET', '/api/admin/model/info');
+}
+export function adminModelDevices() {
+  return request('GET', '/api/admin/model/devices');
+}
+export function adminModelTrain(params) {
+  return request('POST', '/api/admin/model/train', params);
+}
+export function adminModelTrainingStatus() {
+  return request('GET', '/api/admin/model/training/status');
+}
+export function adminModelTrainingCancel() {
+  return request('POST', '/api/admin/model/training/cancel');
+}
+
+// ── 管理后台：系统配置 ──
+export function adminConfigLlm() {
+  return request('GET', '/api/admin/config/llm');
+}
+export function adminConfigLlmUpdate(providerId, data) {
+  return request('PUT', `/api/admin/config/llm/${providerId}`, data);
+}
+export function adminConfigLlmTest(providerId) {
+  return request('POST', '/api/admin/config/llm/test', { provider_id: providerId });
+}
+export function adminConfigSystem() {
+  return request('GET', '/api/admin/config/system');
+}
+export function adminConfigSystemUpdate(data) {
+  return request('PUT', '/api/admin/config/system', data);
+}
+
+// ── 管理后台：百科管理 ──
+export function adminEncyclopediaCreate(data) {
+  return request('POST', '/api/admin/encyclopedia', data);
+}
+export function adminEncyclopediaUpdate(id, data) {
+  return request('PUT', `/api/admin/encyclopedia/${id}`, data);
+}
+export function adminEncyclopediaDelete(id) {
+  return request('DELETE', `/api/admin/encyclopedia/${id}`);
+}
+
+// ── 管理后台：用户管理 ──
+export function adminUsersList(params) {
+  const qs = new URLSearchParams(params || {}).toString();
+  return request('GET', `/api/admin/users?${qs}`);
+}
+export function adminUsersUpdate(id, data) {
+  return request('PUT', `/api/admin/users/${id}`, data);
+}
+
+// ── 用户系统 ──
+export function authRegister(data) {
+  return request('POST', '/api/auth/register', data, true);
+}
+export function authLogin(data) {
+  return request('POST', '/api/auth/login', data, true);
+}
+export function authLogout() {
+  return request('POST', '/api/auth/logout', null);
+}
+export function authProfile() {
+  return request('GET', '/api/auth/profile');
+}
+export function authProfileUpdate(data) {
+  return request('PUT', '/api/auth/profile', data);
+}
+export function authProfileStats() {
+  return request('GET', '/api/auth/profile/stats');
+}

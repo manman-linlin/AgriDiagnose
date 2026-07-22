@@ -134,10 +134,22 @@ export default {
       if (resizeHandler) window.removeEventListener('resize', resizeHandler);
     });
 
+    function exportHistoryCSV() {
+      const header = '时间,作物,病害,置信度';
+      const rows = store.state.records.map(r => [r.time||'', r.top1?.crop||'', r.top1?.label_cn||'', (r.top1?.confidence||0)+'%'].join(','));
+      const csv = '﻿' + [header, ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '诊断历史_' + new Date().toISOString().slice(0,10) + '.csv';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
     return {
       subTab, chartDom,
       history, statsData, statsTotal, statsCategories, statsTopDisease,
-      deleteRecord, goDiagnose, clearAll, switchSubTab,
+      deleteRecord, goDiagnose, clearAll, switchSubTab, exportHistoryCSV,
     };
   },
   template: `
@@ -146,7 +158,9 @@ export default {
         icon="clipboard"
         title="历史 · 统计"
         description="查看历史诊断记录，或切换到数据统计了解病害类别分布趋势"
-      ></page-header>
+      >
+        <button class="btn btn-sm btn-outline" @click="exportHistoryCSV" v-if="history.length">导出 CSV</button>
+      </page-header>
 
       <!-- 子标签 — 带底部指示条滑动 -->
       <div class="subtab-wrapper" style="margin-bottom:20px;border-bottom:2px solid var(--color-border-light);position:relative;">

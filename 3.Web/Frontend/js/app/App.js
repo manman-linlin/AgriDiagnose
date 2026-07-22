@@ -7,7 +7,7 @@
  * 子元素（topbar/sidebar/main）靠自身 class 对齐 grid-area，这里不能再套一层 div。
  */
 import { ref, computed, onMounted } from 'vue';
-import { PAGES, currentPage, currentTitle, navigate as routerNavigate, initRouter } from '../router/index.js';
+import { PAGES, currentPage, currentTitle, transitionKey, resolveRoute, navigate as routerNavigate, initRouter, routerState } from '../router/index.js';
 import { useUiStore } from '../stores/ui.js';
 import { useAdminStore } from '../stores/admin.js';
 import AppTopbar from '../layout/Topbar.js';
@@ -19,6 +19,7 @@ import PageChat from '../features/chat/page.js';
 import PageContribute from '../features/contribute/page.js';
 import PageEncyclopedia from '../features/encyclopedia/page.js';
 import PageHistory from '../features/history/page.js';
+import AdminLayout from '../features/admin/AdminLayout.js';
 
 const PAGE_COMPONENTS = {
   diagnose: PageDiagnose,
@@ -43,7 +44,20 @@ export default {
     function toggleSidebar() { sidebarOpen.value = !sidebarOpen.value; }
     function closeSidebar() { sidebarOpen.value = false; }
 
-    const activeComponent = computed(() => PAGE_COMPONENTS[currentPage.value] || PageDiagnose);
+    const activeComponent = computed(() => {
+      void routerState.tick;      // ← 直接依赖 tick，hash 变化后必定重新求值
+      const route = resolveRoute();
+      if (route.type === 'admin') return AdminLayout;
+      return PAGE_COMPONENTS[route.sub] || PageDiagnose;
+    });
+
+    const isOverlay = computed(() => {
+      void routerState.tick;      // ← 直接依赖 tick
+      return resolveRoute().type === 'admin';
+    });
+
+    // 管理员登录成功后，admin.login() 内部已通过 location.hash 跳转到管理后台，
+    // 无需再通过 watch 重复设置 hash，避免时序竞态。
 
     onMounted(() => {
       initRouter();
@@ -52,28 +66,30 @@ export default {
     });
 
     return {
-      ui, admin, sidebarOpen, pages: PAGES, currentPage, currentTitle,
-      navigate, toggleSidebar, closeSidebar, activeComponent,
+      ui, admin, sidebarOpen, pages: PAGES, currentPage, currentTitle, transitionKey,
+      navigate, toggleSidebar, closeSidebar, activeComponent, isOverlay,
     };
   },
   template: `
     <div v-if="ui.toast.visible" class="toast" :class="ui.toast.type">{{ ui.toast.message }}</div>
 
-    <app-topbar
-      :current-title="currentTitle"
-      :sidebar-open="sidebarOpen"
-      @toggle-sidebar="toggleSidebar"
-    ></app-topbar>
+    <template v-if="!isOverlay">
+      <app-topbar
+        :current-title="currentTitle"
+        :sidebar-open="sidebarOpen"
+        @toggle-sidebar="toggleSidebar"
+      ></app-topbar>
 
-    <app-sidebar
-      :current-page="currentPage"
-      :pages="pages"
-      :model-ready="ui.system.modelReady"
-      :open="sidebarOpen"
-      @navigate="navigate"
-    ></app-sidebar>
+      <app-sidebar
+        :current-page="currentPage"
+        :pages="pages"
+        :model-ready="ui.system.modelReady"
+        :open="sidebarOpen"
+        @navigate="navigate"
+      ></app-sidebar>
 
-    <div class="sidebar-overlay" :class="{ open: sidebarOpen }" @click="closeSidebar"></div>
+      <div class="sidebar-overlay" :class="{ open: sidebarOpen }" @click="closeSidebar"></div>
+    </template>
 
     <!-- 管理员登录弹窗 -->
     <div v-if="admin.state.showLoginModal" class="modal-overlay" @click.self="admin.toggleLoginModal()">
@@ -112,16 +128,17 @@ export default {
     </div>
 
     <!-- 主内容区（唯一可滚动区域） -->
-    <main class="main-content">
-      <div class="page-container">
+    <main class="main-content" :style="isOverlay ? { marginLeft: '0' } : {}">
+      <div class="page-container" :style="isOverlay ? { maxWidth: '100%', padding: '0' } : {}">
         <Transition name="page" mode="out-in">
-          <component :is="activeComponent" :key="currentPage"></component>
+          <component :is="activeComponent" :key="transitionKey"></component>
         </Transition>
       </div>
     </main>
 
     <!-- 手机端底部导航 -->
     <app-mobile-bottom-nav
+      v-if="!isOverlay"
       :current-page="currentPage"
       :pages="pages"
       @navigate="navigate"

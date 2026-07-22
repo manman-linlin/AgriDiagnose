@@ -190,6 +190,25 @@
    11. prefers-reduced-motion 无障碍
    ══════════════════════════════════════════════════════════════ */
 
+/* 脉冲圆点（模型训练中呼吸指示） */
+.pulse-dot {
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+/* 统计卡片数据变化闪烁 */
+.stat-flash .stat-num,
+.stat-flash .dash-stat-value {
+  animation: stat-flash-up 0.7s var(--ease-out);
+}
+@keyframes stat-flash-up {
+  0%   { color: var(--color-success); }
+  100% { color: var(--color-text); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

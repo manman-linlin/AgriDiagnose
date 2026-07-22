@@ -1056,6 +1056,70 @@ img.upload-preview {
 .stat-box .stat-txt { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-top: 6px; font-weight: 500; }
 .stat-chart { width: 100%; height: 380px; }
 
+/* ══════════════════════════════════════════════════════════════
+   仪表盘数据卡片（新版）— 图标+数值+标签 纵向布局
+   ══════════════════════════════════════════════════════════════ */
+
+.dash-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 16px 20px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+  box-shadow: var(--shadow-card);
+}
+.dash-stat-card:hover {
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.dash-stat-icon {
+  width: 48px; height: 48px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dash-stat-body { text-align: center; }
+
+.dash-stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--color-text);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.stat-flash .dash-stat-value {
+  animation: stat-flash-up 0.7s var(--ease-out);
+}
+
+@media (max-width: 1200px) {
+  .dash-stat-card { padding: 18px 12px 14px; }
+  .dash-stat-icon { width: 40px; height: 40px; }
+  .dash-stat-value { font-size: 22px; }
+}
+@media (max-width: 768px) {
+  .dash-stat-card { padding: 14px 8px 10px; gap: 8px; }
+  .dash-stat-icon { width: 36px; height: 36px; }
+  .dash-stat-value { font-size: 20px; }
+}
+
 /* 子标签滑动指示条 */
 .subtab-wrapper { position: relative; display: flex; gap: 0; }
 .subtab-indicator {
@@ -1256,6 +1320,7 @@ img.upload-preview {
 .toast.success { background: var(--color-card); color: var(--color-success); border-left-color: var(--color-success); }
 .toast.error   { background: var(--color-card); color: var(--color-error); border-left-color: var(--color-error); }
 .toast.warning { background: var(--color-card); color: var(--color-warning); border-left-color: var(--color-warning); }
+.toast.info    { background: var(--color-card); color: var(--color-info);    border-left-color: var(--color-info); }
 
 /* ══════════════════════════════════════════════════════════════
    步骤指示器（数据贡献）
