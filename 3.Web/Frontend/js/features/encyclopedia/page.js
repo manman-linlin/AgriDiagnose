@@ -31,8 +31,10 @@ export default {
     const drawOpen = ref(false);
     const drawDisease = ref(null);
     const crops = ref([]);
-    const categories = ['全部', '真菌性病害', '细菌性病害', '病毒性病害', '虫害'];
+    const categories = ['全部', '真菌性病害', '细菌性病害', '病毒性病害', '虫害', '\u5065\u5eb7\u72b6\u6001'];
     const diseases = ref([]);
+    const currentPage = ref(1);
+    const pageSize = 8;
     const loading = ref(false);
     const error = ref('');
 
@@ -54,6 +56,24 @@ export default {
       }
       return list;
     });
+
+    const totalPages = computed(() => Math.max(1, Math.ceil(filteredDiseases.value.length / pageSize)));
+    const paginatedDiseases = computed(() => {
+      const start = (currentPage.value - 1) * pageSize;
+      return filteredDiseases.value.slice(start, start + pageSize);
+    });
+    const pageNumbers = computed(() => Array.from({ length: totalPages.value }, (_, i) => i + 1));
+
+    watch([selectedCrop, selectedCategory, searchDebounced], () => {
+      currentPage.value = 1;
+    });
+    watch(totalPages, (pages) => {
+      if (currentPage.value > pages) currentPage.value = pages;
+    });
+
+    function goToPage(page) {
+      currentPage.value = Math.min(Math.max(page, 1), totalPages.value);
+    }
 
     async function loadDiseases() {
       loading.value = true;
@@ -128,6 +148,7 @@ export default {
       searchQuery.value = '';
       selectedCrop.value = '';
       selectedCategory.value = '';
+      currentPage.value = 1;
     }
 
     const highRiskCount = computed(() => diseases.value.filter(d => riskClass(d) === 'high').length);
@@ -137,8 +158,9 @@ export default {
 
     return {
       searchQuery, selectedCrop, selectedCategory, drawOpen, drawDisease,
-      crops, categories, diseases, loading, error, filteredDiseases, highRiskCount,
-      selectCrop, selectCategory, openDetail, closeDetail, goDiagnose, goChat,
+      crops, categories, diseases, loading, error, filteredDiseases, paginatedDiseases,
+      currentPage, totalPages, pageNumbers, highRiskCount,
+      selectCrop, selectCategory, openDetail, closeDetail, goDiagnose, goChat, goToPage,
       riskClass, riskLabel, getBgColor, resetFilters, loadDiseases,
     };
   },
@@ -217,13 +239,16 @@ export default {
 
           <div v-if="!loading" class="disease-grid">
             <div
-              v-for="(d, idx) in filteredDiseases"
+              v-for="(d, idx) in paginatedDiseases"
               :key="d.id"
               class="disease-card stagger-item"
               :style="{ '--i': idx }"
               @click="openDetail(d)"
             >
-              <div class="disease-img" :style="{ background: getBgColor(d) }"></div>
+              <div class="disease-img" :style="{ background: getBgColor(d) }">
+                <img v-if="d.image_url" :src="d.image_url" :alt="d.name_cn + '示例图'" loading="lazy" />
+                <app-icon v-else name="image" :size="32"></app-icon>
+              </div>
               <div class="disease-body">
                 <div class="disease-tags">
                   <span class="tag tag-crop">{{ d.crop_cn }}</span>
@@ -238,6 +263,20 @@ export default {
               </div>
             </div>
           </div>
+
+          <nav v-if="!loading && totalPages > 1" class="encyclopedia-pagination" aria-label="病害百科分页">
+            <button class="page-button page-nav" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">上一页</button>
+            <button
+              v-for="page in pageNumbers"
+              :key="page"
+              class="page-button"
+              :class="{ active: currentPage === page }"
+              :aria-current="currentPage === page ? 'page' : null"
+              @click="goToPage(page)"
+            >{{ page }}</button>
+            <button class="page-button page-nav" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">下一页</button>
+            <span class="page-summary">第 {{ currentPage }} / {{ totalPages }} 页，共 {{ filteredDiseases.length }} 条</span>
+          </nav>
 
           <app-empty
             v-if="!loading && filteredDiseases.length === 0"
@@ -260,6 +299,11 @@ export default {
           </div>
           <div style="font-size:13px;color:#999;margin-bottom:12px;">
             {{ drawDisease.name_en }}
+          </div>
+
+          <div v-if="drawDisease.image_url" class="encyclopedia-detail-image">
+            <img :src="drawDisease.image_url" :alt="drawDisease.name_cn + '示例图'" />
+            <span>现有测试集示例图片</span>
           </div>
 
           <div style="display:flex;gap:6px;margin-bottom:20px;">

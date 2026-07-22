@@ -36,7 +36,9 @@ app.add_middleware(
 # ── 路径 ────────────────────────────────────────────
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "Frontend"
-MODEL_DATA_DIR = Path(__file__).resolve().parents[4] / "2.Model" / "Data"
+PROJECT_DIR = Path(__file__).resolve().parents[3]
+MODEL_DATA_DIR = PROJECT_DIR / "2.Model" / "Data"
+ENCYCLOPEDIA_IMAGES_DIR = PROJECT_DIR / "5.Test" / "image"
 UPLOADS_DIR = BACKEND_DIR / "uploads"
 LOGS_DIR = BACKEND_DIR / "logs"
 HISTORY_FILE = LOGS_DIR / "history.json"
@@ -50,6 +52,12 @@ if FRONTEND_DIR.is_dir():
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 if MODEL_DATA_DIR.is_dir():
     app.mount("/model-data", StaticFiles(directory=str(MODEL_DATA_DIR)), name="model-data")
+if ENCYCLOPEDIA_IMAGES_DIR.is_dir():
+    app.mount(
+        "/encyclopedia-images",
+        StaticFiles(directory=str(ENCYCLOPEDIA_IMAGES_DIR)),
+        name="encyclopedia-images",
+    )
 
 
 # ── 历史记录读写 ────────────────────────────────────

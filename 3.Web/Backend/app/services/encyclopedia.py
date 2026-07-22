@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 DATA_FILE = Path(__file__).resolve().parents[1] / "data" / "encyclopedia.json"
+SAMPLE_IMAGES_DIR = Path(__file__).resolve().parents[4] / "5.Test" / "image"
 
 # 覆盖全部 14 种作物的展示顺序；暂无收录病害的作物计数显示为 0，保持列表完整。
 ALL_CROPS = [
@@ -16,11 +17,35 @@ ALL_CROPS = [
 ]
 
 
+def _sample_image_urls() -> dict[str, str]:
+    """Index the first existing test image by its Chinese class name."""
+    if not SAMPLE_IMAGES_DIR.is_dir():
+        return {}
+
+    urls = {}
+    for class_dir in SAMPLE_IMAGES_DIR.iterdir():
+        if not class_dir.is_dir() or "_" not in class_dir.name:
+            continue
+        class_name = class_dir.name.split("_", 1)[1]
+        sample = next(
+            (p for p in sorted(class_dir.iterdir()) if p.suffix.lower() in {".jpg", ".jpeg", ".png"}),
+            None,
+        )
+        if sample:
+            urls[class_name] = f"/encyclopedia-images/{class_dir.name}/{sample.name}"
+    return urls
+
+
 def _load() -> list[dict]:
     if not DATA_FILE.exists():
         return []
     with DATA_FILE.open("r", encoding="utf-8") as f:
-        return json.load(f)
+        diseases = json.load(f)
+
+    image_urls = _sample_image_urls()
+    for disease in diseases:
+        disease["image_url"] = image_urls.get(disease.get("name_cn", ""), "")
+    return diseases
 
 
 def list_diseases(crop: str = "", category: str = "", keyword: str = "") -> list[dict]:
