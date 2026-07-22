@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from PIL import Image
 
-from app.services import agent_service
+from app.services import agent_service, encyclopedia
 from app.services.classifier import classifier
 from app.services.collector import collector_service
 
@@ -266,6 +266,35 @@ def contribute_classes():
         return {"code": 200, "data": classes}
     except Exception as e:
         return JSONResponse(status_code=500, content={"code": 500, "message": f"获取失败: {str(e)}"})
+
+
+# ── 病害百科 ──────────────────────────────────────────
+@app.get("/api/encyclopedia/list")
+def encyclopedia_list(crop: str = "", category: str = "", keyword: str = ""):
+    """病害百科列表，支持按作物 / 分类 / 关键词过滤。"""
+    try:
+        diseases = encyclopedia.list_diseases(crop=crop, category=category, keyword=keyword)
+        return {"code": 200, "data": diseases, "total": len(diseases)}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"code": 500, "message": f"获取失败: {str(e)}"})
+
+
+@app.get("/api/encyclopedia/crops")
+def encyclopedia_crops():
+    """全部作物及各自收录的病害词条数量。"""
+    try:
+        return {"code": 200, "data": encyclopedia.list_crops()}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"code": 500, "message": f"获取失败: {str(e)}"})
+
+
+@app.get("/api/encyclopedia/{disease_id}")
+def encyclopedia_detail(disease_id: str):
+    """单个病害详情。"""
+    detail = encyclopedia.get_detail(disease_id)
+    if not detail:
+        return JSONResponse(status_code=404, content={"code": 404, "message": "未找到该病害词条"})
+    return {"code": 200, "data": detail}
 
 
 # ── Pydantic 模型 ─────────────────────────────────────

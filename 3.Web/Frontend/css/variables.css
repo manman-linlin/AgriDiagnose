@@ -1,61 +1,57 @@
 /* ══════════════════════════════════════════════════════════════
    AgriDiagnose — CSS 变量定义（设计 Token）
-   所有颜色/间距/圆角/阴影/过渡/字体/布局变量统一在此定义
+   企业后台管理系统风格：克制的配色分级 + 轻量阴影/圆角，
+   不使用玻璃拟态、发光、渐变堆砌等装饰性效果。
    ══════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── 主色调 ── */
-  --color-primary:       #2E7D32;
-  --color-primary-light: #4CAF50;
-  --color-primary-bg:    #E8F5E9;
-  --color-primary-dark:  #1B5E20;
-  --color-primary-pale:  #C8E6C9;
+  /* ── 主色调（专业化绿，非鲜亮渐变） ── */
+  --color-primary:       #16A34A;
+  --color-primary-light: #22B35A;
+  --color-primary-bg:    #F0FDF4;
+  --color-primary-dark:  #15803D;
+  --color-primary-pale:  #DCFCE7;
 
-  /* ── "智慧田园" 暖色盘 ── */
-  --color-sprout:        #7CB342;   /* 嫩芽绿 — hover/活跃态点缀 */
-  --color-gold:          #F9A825;   /* 麦浪金 — 中度强调、统计第二色 */
-  --color-earth:         #795548;   /* 大地褐 — 稳重深色（侧边栏渐变方向） */
-  --color-wheat:         #FFF8E1;   /* 稻穗暖 — 卡片底色轻暖替代 */
+  /* ── 侧边栏配色（纯色深色，无渐变） ── */
+  --color-sidebar:            #16241B;
+  --color-sidebar-header:     #0F1A13;
+  --color-sidebar-text:       #A6B3AC;
+  --color-sidebar-active:     #FFFFFF;
+  --color-sidebar-hover:      rgba(255, 255, 255, 0.06);
+  --color-sidebar-active-bg:  rgba(255, 255, 255, 0.08);
+  --color-sidebar-divider:    rgba(255, 255, 255, 0.08);
+  --color-sidebar-indicator:  #22B35A;
 
-  /* ── 侧边栏配色 ── */
-  --color-sidebar:       #1A3320;
-  --color-sidebar-text:  #A5D6A7;
-  --color-sidebar-active:#FFFFFF;
-  --color-sidebar-hover: rgba(255, 255, 255, 0.06);
-  --color-sidebar-active-bg: rgba(255, 255, 255, 0.10);
-  --color-sidebar-divider:rgba(255, 255, 255, 0.10);
-  --color-sidebar-indicator: #4CAF50;
+  /* ── 功能色（浅底 + 纯色文字，语义色阶） ── */
+  --color-accent:        #EA580C;
+  --color-accent-bg:     #FFF7ED;
+  --color-success:       #16A34A;
+  --color-success-bg:    #F0FDF4;
+  --color-error:          #DC2626;
+  --color-error-bg:       #FEF2F2;
+  --color-warning:       #D97706;
+  --color-warning-bg:    #FFFBEB;
+  --color-info:          #2563EB;
+  --color-info-bg:       #EFF6FF;
 
-  /* ── 功能色 ── */
-  --color-accent:        #FF6F00;
-  --color-accent-bg:     #FFF3E0;
-  --color-success:       #43A047;
-  --color-success-bg:    #E8F5E9;
-  --color-error:         #C62828;
-  --color-error-bg:      #FFEBEE;
-  --color-warning:       #F9A825;
-  --color-warning-bg:    #FFF8E1;
-  --color-info:          #1565C0;
-  --color-info-bg:       #E3F2FD;
+  /* ── 风险等级色（复用语义色阶，不单独设计） ── */
+  --color-risk-low:      #16A34A;
+  --color-risk-mid:      #D97706;
+  --color-risk-high:     #DC2626;
+  --color-risk-severe:   #991B1B;
+  --color-healthy:       #16A34A;
 
-  /* ── 风险等级色 ── */
-  --color-risk-low:      #43A047;
-  --color-risk-mid:      #FF6F00;
-  --color-risk-high:     #E53935;
-  --color-risk-severe:   #C62828;
-  --color-healthy:       #2E7D32;
-
-  /* ── 中性色（智慧田园暖调） ── */
-  --color-bg:            #F5F2EB;
-  --color-page-bg:       #F5F2EB;   /* 暖米白底色 */
-  --color-card:          #FFFEF9;   /* 纸张暖白 */
-  --color-card-alt:      #FFFDF5;   /* 极淡暖黄 */
-  --color-border:        #E0DCD2;   /* 暖灰边框 */
-  --color-border-light:  #F0EDE5;   /* 更淡暖灰 */
-  --color-text:          #2E2B26;
-  --color-text-secondary:#6B6558;
-  --color-text-hint:     #9E9685;
-  --color-text-disabled: #C5BFAE;
+  /* ── 中性色 ── */
+  --color-bg:            #F5F6F8;
+  --color-page-bg:       #F5F6F8;
+  --color-card:          #FFFFFF;
+  --color-card-alt:      #FAFBFC;
+  --color-border:        #E4E7EB;
+  --color-border-light:  #EEF0F3;
+  --color-text:          #1F2329;
+  --color-text-secondary:#5C6470;
+  --color-text-hint:     #8A919C;
+  --color-text-disabled: #C1C6CC;
   --color-text-inverse:  #FFFFFF;
 
   /* ── 间距 ── */
@@ -66,111 +62,29 @@
   --space-xl:  32px;
   --space-2xl: 48px;
 
-  /* ── 圆角 ── */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  /* ── 圆角（小而统一，不用大圆角/胶囊化卡片） ── */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
   --radius-round: 50%;
 
-  /* ── 阴影 ── */
+  /* ── 阴影（只保留 2 档轻阴影，用于弹层/下拉，卡片默认用边框而非阴影） ── */
   --shadow-none: none;
-  --shadow-xs:  0 1px 2px  rgba(0, 0, 0, 0.04);
-  --shadow-sm:  0 1px 4px  rgba(0, 0, 0, 0.06);
-  --shadow-md:  0 4px 16px rgba(0, 0, 0, 0.10);
-  --shadow-lg:  0 8px 30px rgba(0, 0, 0, 0.12);
-  --shadow-xl:  0 16px 48px rgba(0, 0, 0, 0.16);
-  --shadow-card:      0 1px 8px  rgba(0, 0, 0, 0.04);
-  --shadow-card-hover:0 4px 20px rgba(46, 125, 50, 0.10), 0 1px 4px rgba(0,0,0,0.06);
-  --shadow-glow-green:0 0 0 3px rgba(76, 175, 80, 0.18);
-  --shadow-sidebar:   4px 0 24px rgba(0, 0, 0, 0.25);
+  --shadow-xs:  0 1px 2px  rgba(16, 24, 40, 0.04);
+  --shadow-sm:  0 1px 3px  rgba(16, 24, 40, 0.06);
+  --shadow-md:  0 4px 12px rgba(16, 24, 40, 0.08);
+  --shadow-lg:  0 8px 24px rgba(16, 24, 40, 0.10);
+  --shadow-xl:  0 12px 32px rgba(16, 24, 40, 0.12);
+  --shadow-card:       0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-card-hover: 0 2px 8px rgba(16, 24, 40, 0.08);
 
-  /* ── 过渡 ── */
-  --transition-fast:   0.15s ease;
-  --transition-normal: 0.25s ease;
-  --transition-slow:   0.35s ease;
-  --transition-drawer: 0.30s cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* ── 渐变系统（统一渐变方向 135°） ── */
-  --gradient-page:         linear-gradient(180deg, #F5F2EB 0%, #EEE9DD 40%, #E6DFD0 100%);
-  --gradient-sidebar:      linear-gradient(180deg, #1A3320 0%, #1F3825 40%, #1A2F1A 100%);
-  --gradient-hero:         linear-gradient(135deg, #E8F5E9 0%, #F1F8E9 50%, #FFF8E1 100%);
-  --gradient-hero-top1:    linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 50%, #A5D6A7 100%);
-  --gradient-stat-green:   linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
-  --gradient-stat-gold:    linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
-  --gradient-stat-blue:    linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
-  --gradient-btn-primary:  linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%);
-  --gradient-card-accent:  linear-gradient(135deg, #FAFFF5 0%, #F1F8E9 100%);
-  --gradient-card-report:  linear-gradient(180deg, #FFFEF9 0%, #FFFDF5 40%, #F7F3E8 100%);
-
-  /* ── 页面装饰纹理（叶片剪影 SVG pattern） ── */
-  --texture-leaf: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 Q40 15 35 30 Q30 45 15 50 Q5 40 10 25 Q15 10 30 5Z' fill='none' stroke='%232E7D32' stroke-width='0.4' opacity='0.12'/%3E%3Ccircle cx='30' cy='30' r='1.2' fill='%232E7D32' opacity='0.08'/%3E%3C/svg%3E");
-
-  /* ── 侧边栏装饰色 ── */
-  --color-sidebar-accent:  #2E7D32;
-  --color-sidebar-glow:    rgba(76, 175, 80, 0.15);
-
-  /* ── 卡片层次标记色 ── */
-  --color-card-diagnose:   #E8F5E9;
-  --color-card-ai:         #E3F2FD;
-  --color-card-contribute: #FFF3E0;
-  --color-card-info:       #F3E5F5;
-
-  /* ═══════════════════════════════════════════════════════════
-     ── 玻璃拟态 (Glassmorphism) 变量 ──
-     ═══════════════════════════════════════════════════════════ */
-  --glass-bg:              rgba(255, 255, 255, 0.55);
-  --glass-bg-strong:       rgba(255, 255, 255, 0.72);
-  --glass-bg-light:        rgba(255, 255, 255, 0.35);
-  --glass-bg-dark:         rgba(26, 51, 32, 0.78);       /* 侧边栏深色玻璃 */
-  --glass-bg-dark-strong:  rgba(26, 51, 32, 0.88);
-  --glass-blur:            16px;
-  --glass-blur-strong:     24px;
-  --glass-blur-light:      8px;
-  --glass-border:          rgba(255, 255, 255, 0.45);
-  --glass-border-strong:   rgba(255, 255, 255, 0.65);
-  --glass-border-dark:     rgba(255, 255, 255, 0.10);
-  --glass-highlight:       rgba(255, 255, 255, 0.55);    /* 顶部高光线 */
-  --glass-shadow:          0 8px 32px rgba(0, 0, 0, 0.08);
-
-  /* ═══════════════════════════════════════════════════════════
-     ── 3D 卡片效果变量 ──
-     ═══════════════════════════════════════════════════════════ */
-  --card-3d-perspective:   800px;
-  --card-3d-rotate:        4deg;      /* hover 时绕 X/Y 轴的旋转量 */
-  --card-3d-lift:          -8px;      /* hover 时 Z 轴抬升 */
-  --card-3d-shadow-rest:   0 2px 12px rgba(0, 0, 0, 0.06);
-  --card-3d-shadow-hover: 0 16px 40px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(46, 125, 50, 0.08);
-
-  /* ═══════════════════════════════════════════════════════════
-     ── 光效 (Glow) 变量 ──
-     ═══════════════════════════════════════════════════════════ */
-  --glow-green:            0 0 16px rgba(76, 175, 80, 0.45), 0 0 40px rgba(76, 175, 80, 0.15);
-  --glow-green-soft:       0 0 10px rgba(76, 175, 80, 0.30);
-  --glow-amber:            0 0 16px rgba(249, 168, 37, 0.40), 0 0 36px rgba(249, 168, 37, 0.12);
-  --glow-blue:             0 0 16px rgba(21, 101, 192, 0.35), 0 0 36px rgba(21, 101, 192, 0.10);
-  --glow-sidebar-indicator:0 0 8px rgba(76, 175, 80, 0.6), 0 0 18px rgba(76, 175, 80, 0.25);
-  --glow-orb-green:        radial-gradient(circle, rgba(76, 175, 80, 0.18) 0%, transparent 70%);
-  --glow-orb-amber:        radial-gradient(circle, rgba(249, 168, 37, 0.13) 0%, transparent 70%);
-  --glow-orb-earth:        radial-gradient(circle, rgba(121, 85, 72, 0.10) 0%, transparent 70%);
-
-  /* ═══════════════════════════════════════════════════════════
-     ── 渐变边框变量 ──
-     ═══════════════════════════════════════════════════════════ */
-  --border-gradient-green:  linear-gradient(135deg, #4CAF50, #2E7D32, #81C784);
-  --border-gradient-warm:   linear-gradient(135deg, #4CAF50, #7CB342, #F9A825);
-  --border-gradient-subtle: linear-gradient(135deg, rgba(76,175,80,0.5), rgba(124,179,66,0.3), rgba(249,168,37,0.4));
-  --border-gradient-gold:   linear-gradient(135deg, #F9A825, #FFB74D, #F9A825);
-
-  /* ═══════════════════════════════════════════════════════════
-     ── 流动渐变 (Mesh/Aurora) 色标 ──
-     ═══════════════════════════════════════════════════════════ */
-  --mesh-color-1: rgba(46, 125, 50, 0.10);   /* 主绿 */
-  --mesh-color-2: rgba(124, 179, 66, 0.08);  /* 嫩芽绿 */
-  --mesh-color-3: rgba(249, 168, 37, 0.06);  /* 麦浪金 */
-  --mesh-color-4: rgba(121, 85, 72, 0.05);   /* 大地褐 */
-  --mesh-color-5: rgba(76, 175, 80, 0.07);   /* 翠绿 */
+  /* ── 过渡（保留必要的交互反馈，不做弹性/夸张曲线） ── */
+  --transition-fast:   0.12s ease;
+  --transition-normal: 0.18s ease;
+  --transition-slow:   0.25s ease;
+  --transition-drawer: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 
   /* ── 字体 ── */
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -186,19 +100,15 @@
   --topbar-height:           56px;
   --sidebar-width:           220px;
   --sidebar-collapsed-width: 56px;
-  --content-max-width:       960px;
+  --content-max-width:       1240px;
 
   /* ── 组件尺寸 ── */
-  --btn-height:       44px;
-  --input-height:     44px;
+  --btn-height:       36px;
+  --input-height:     36px;
   --touch-min:        44px;   /* 移动端最小触控区 */
   --chat-avatar-size: 32px;
   --thumb-size:       64px;
-
-  /* ── 3D 透视变量 ── */
-  --perspective-card:   800px;
-  --perspective-page:   600px;
-  --perspective-strong: 500px;
+  --icon-size:        18px;
 
   /* ── Z-Index 层级 ── */
   --z-sidebar:     100;
@@ -208,7 +118,6 @@
   --z-toast:        300;
   --z-mobile-nav:    50;
   --z-hamburger:     50;
-  --z-float-decor:   -1;   /* 浮动装饰在页面背景层 */
 }
 
 
@@ -218,100 +127,55 @@
    ══════════════════════════════════════════════════════════════ */
 
 html.dark {
-  --color-primary:       #66BB6A;
-  --color-primary-light: #81C784;
-  --color-primary-bg:    #1B3A1B;
-  --color-primary-dark:  #A5D6A7;
-  --color-primary-pale:  #2E4A2E;
+  --color-primary:       #4ADE80;
+  --color-primary-light: #6EE7A0;
+  --color-primary-bg:    #0F2A18;
+  --color-primary-dark:  #86EFAC;
+  --color-primary-pale:  #1B3A24;
 
-  --color-sidebar:       #121C14;
-  --color-sidebar-text:  #81A084;
-  --color-sidebar-active:#E8F5E9;
-  --color-sidebar-hover: rgba(255, 255, 255, 0.04);
-  --color-sidebar-active-bg: rgba(255, 255, 255, 0.08);
-  --color-sidebar-divider:   rgba(255, 255, 255, 0.06);
-  --color-sidebar-indicator: #66BB6A;
+  --color-sidebar:            #0D1710;
+  --color-sidebar-header:     #0A120C;
+  --color-sidebar-text:       #8A9690;
+  --color-sidebar-active:     #F0FDF4;
+  --color-sidebar-hover:      rgba(255, 255, 255, 0.05);
+  --color-sidebar-active-bg:  rgba(255, 255, 255, 0.07);
+  --color-sidebar-divider:    rgba(255, 255, 255, 0.06);
+  --color-sidebar-indicator:  #4ADE80;
 
-  --color-accent:        #FFB74D;
-  --color-accent-bg:     #3E2E1A;
-  --color-success:       #66BB6A;
-  --color-success-bg:    #1B3A1B;
-  --color-error:         #EF5350;
-  --color-error-bg:      #3E1A1A;
-  --color-warning:       #FFD54F;
-  --color-warning-bg:    #3E3A1A;
-  --color-info:          #42A5F5;
-  --color-info-bg:       #1A2A3E;
+  --color-accent:        #FB923C;
+  --color-accent-bg:     #3A2313;
+  --color-success:       #4ADE80;
+  --color-success-bg:    #0F2A18;
+  --color-error:         #F87171;
+  --color-error-bg:      #3A1414;
+  --color-warning:       #FBBF24;
+  --color-warning-bg:    #3A2E0C;
+  --color-info:          #60A5FA;
+  --color-info-bg:       #132238;
 
-  --color-bg:            #1A1A1A;
-  --color-page-bg:       #141814;
-  --color-card:          #1E1E1E;
-  --color-border:        #333333;
-  --color-border-light:  #2A2A2A;
-  --color-text:          #E0E0E0;
-  --color-text-secondary:#A0A0A0;
-  --color-text-hint:     #707070;
-  --color-text-disabled: #505050;
-  --color-text-inverse:  #E0E0E0;
+  --color-bg:            #14171A;
+  --color-page-bg:       #101214;
+  --color-card:          #1B1E22;
+  --color-card-alt:      #202428;
+  --color-border:        #2C3036;
+  --color-border-light:  #24272B;
+  --color-text:          #E5E7EB;
+  --color-text-secondary:#9CA3AF;
+  --color-text-hint:     #6B7280;
+  --color-text-disabled: #4B5563;
+  --color-text-inverse:  #14171A;
 
-  --color-risk-low:      #66BB6A;
-  --color-risk-mid:      #FFB74D;
-  --color-risk-high:     #EF5350;
-  --color-risk-severe:   #E53935;
-  --color-healthy:       #66BB6A;
+  --color-risk-low:      #4ADE80;
+  --color-risk-mid:      #FBBF24;
+  --color-risk-high:     #F87171;
+  --color-risk-severe:   #EF4444;
+  --color-healthy:       #4ADE80;
 
-  --shadow-xs:   0 1px 2px  rgba(0, 0, 0, 0.20);
-  --shadow-sm:   0 1px 4px  rgba(0, 0, 0, 0.30);
-  --shadow-md:   0 4px 16px rgba(0, 0, 0, 0.40);
-  --shadow-lg:   0 8px 30px rgba(0, 0, 0, 0.50);
-  --shadow-xl:   0 16px 48px rgba(0, 0, 0, 0.60);
-  --shadow-card: 0 1px 8px  rgba(0, 0, 0, 0.20);
-  --shadow-card-hover: 0 4px 20px rgba(0, 0, 0, 0.30);
-  --shadow-glow-green: 0 0 0 3px rgba(102, 187, 106, 0.25);
-  --shadow-sidebar: 4px 0 24px rgba(0, 0, 0, 0.50);
-
-  --gradient-page:    linear-gradient(180deg, #141814 0%, #1A1E1A 40%, #121612 100%);
-  --gradient-sidebar: linear-gradient(180deg, #121C14 0%, #18241A 40%, #121C14 100%);
-  --gradient-hero:    linear-gradient(135deg, #1B3A1B 0%, #1A2E1A 50%, #3E2E1A 100%);
-  --gradient-stat-green: linear-gradient(135deg, #1B3A1B 0%, #1A2E1A 100%);
-
-  --color-card-diagnose:   #1B3A1B;
-  --color-card-ai:         #1A2A3E;
-  --color-card-contribute: #3E2E1A;
-  --color-card-info:       #2A1A2E;
-
-  /* 暗色模式 — 玻璃拟态 */
-  --glass-bg:              rgba(30, 30, 30, 0.55);
-  --glass-bg-strong:       rgba(30, 30, 30, 0.75);
-  --glass-bg-light:        rgba(30, 30, 30, 0.35);
-  --glass-bg-dark:         rgba(18, 28, 20, 0.82);
-  --glass-bg-dark-strong:  rgba(18, 28, 20, 0.92);
-  --glass-border:          rgba(255, 255, 255, 0.10);
-  --glass-border-strong:   rgba(255, 255, 255, 0.16);
-  --glass-border-dark:     rgba(255, 255, 255, 0.06);
-  --glass-highlight:       rgba(255, 255, 255, 0.08);
-  --glass-shadow:          0 8px 32px rgba(0, 0, 0, 0.35);
-
-  /* 暗色模式 — 3D 卡片 */
-  --card-3d-shadow-rest:  0 2px 12px rgba(0, 0, 0, 0.30);
-  --card-3d-shadow-hover: 0 16px 40px rgba(0, 0, 0, 0.50), 0 4px 12px rgba(102, 187, 106, 0.12);
-
-  /* 暗色模式 — 光效 */
-  --glow-green:            0 0 20px rgba(102, 187, 106, 0.50), 0 0 50px rgba(102, 187, 106, 0.18);
-  --glow-green-soft:       0 0 14px rgba(102, 187, 106, 0.35);
-  --glow-amber:            0 0 20px rgba(255, 179, 77, 0.45), 0 0 50px rgba(255, 179, 77, 0.14);
-  --glow-sidebar-indicator:0 0 10px rgba(102, 187, 106, 0.7), 0 0 24px rgba(102, 187, 106, 0.30);
-  --glow-orb-green:        radial-gradient(circle, rgba(102, 187, 106, 0.14) 0%, transparent 70%);
-  --glow-orb-amber:        radial-gradient(circle, rgba(255, 179, 77, 0.10) 0%, transparent 70%);
-  --glow-orb-earth:        radial-gradient(circle, rgba(161, 136, 127, 0.08) 0%, transparent 70%);
-
-  /* 暗色模式 — 渐变边框 */
-  --border-gradient-subtle: linear-gradient(135deg, rgba(102,187,106,0.45), rgba(129,199,132,0.25), rgba(255,179,77,0.35));
-
-  /* 暗色模式 — Mesh 色标 */
-  --mesh-color-1: rgba(102, 187, 106, 0.08);
-  --mesh-color-2: rgba(129, 199, 132, 0.06);
-  --mesh-color-3: rgba(255, 179, 77, 0.05);
-  --mesh-color-4: rgba(161, 136, 127, 0.04);
-  --mesh-color-5: rgba(102, 187, 106, 0.06);
+  --shadow-xs:   0 1px 2px  rgba(0, 0, 0, 0.24);
+  --shadow-sm:   0 1px 3px  rgba(0, 0, 0, 0.30);
+  --shadow-md:   0 4px 12px rgba(0, 0, 0, 0.36);
+  --shadow-lg:   0 8px 24px rgba(0, 0, 0, 0.42);
+  --shadow-xl:   0 12px 32px rgba(0, 0, 0, 0.48);
+  --shadow-card:       0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.36);
 }

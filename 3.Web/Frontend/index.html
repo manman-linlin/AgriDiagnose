@@ -3,23 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🌾 AgriDiagnose — 农作物病虫害智能诊断系统</title>
+  <title>AgriDiagnose — 农作物病虫害智能诊断系统</title>
 
   <!-- ═══════════ 错误诊断脚本 ═══════════ -->
+  <!-- 捕获三类错误来源：同步脚本错误 / Promise 未捕获 rejection / Vue 内部 errorHandler（Vue 默认只 console.error 不会抛到 window.onerror）-->
   <script>
     window.__errors = [];
-    window.onerror = function(msg, url, line, col, err) {
-      var entry = (url||'').replace(/.*\//,'') + ':' + line + ' — ' + msg;
+    window.__pushError = function(entry) {
       window.__errors.push(entry);
       var el = document.getElementById('js-errors');
-      if (el) el.innerHTML = window.__errors.map(function(e){return '<p style="color:red;margin:4px;font-size:13px;">❌ '+e+'</p>';}).join('');
+      if (!el) return;
+      el.style.display = 'block';
+      el.innerHTML = '<strong style="color:red;padding:4px;">JS Errors:</strong>' +
+        window.__errors.map(function(e){return '<p style="color:red;margin:4px;font-size:13px;white-space:pre-wrap;">❌ '+e+'</p>';}).join('');
+    };
+    window.onerror = function(msg, url, line, col, err) {
+      var entry = (url||'').replace(/.*\//,'') + ':' + line + ' — ' + msg + (err && err.stack ? '\n' + err.stack : '');
+      window.__pushError(entry);
       return false;
     };
+    window.addEventListener('unhandledrejection', function(ev) {
+      var reason = ev.reason;
+      window.__pushError('[Promise Rejection] ' + (reason && reason.stack ? reason.stack : reason));
+    });
   </script>
 
-  <!-- ═══════════ 第三方 CDN ═══════════ -->
-  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <!-- ═══════════ 第三方依赖（零构建 ESM importmap） ═══════════ -->
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <script type="importmap">
+    {
+      "imports": {
+        "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js",
+        "pinia": "https://unpkg.com/pinia@3/dist/pinia.esm-browser.js",
+        "@vue/devtools-api": "https://unpkg.com/@vue/devtools-api@6/lib/esm/index.js"
+      }
+    }
+  </script>
 
   <!-- ═══════════ CSS（variables 必须最先加载） ═══════════ -->
   <link rel="stylesheet" href="/static/css/variables.css">
@@ -30,141 +50,13 @@
 </head>
 <body>
 
-<!-- 浮动装饰层 — 3D 光斑/叶片/流动渐变 blob -->
-<div class="decor-orbs" aria-hidden="true">
-  <div class="decor-orb-center"></div>
-</div>
+<div id="js-errors" style="position:fixed;top:0;left:0;right:0;background:#fff3e0;z-index:9999;border-bottom:2px solid red;display:none;max-height:40vh;overflow:auto;"></div>
 
-<div id="js-errors" style="position:fixed;top:0;left:0;right:0;background:#fff3e0;z-index:9999;border-bottom:2px solid red;display:none;"></div>
-<script>if(window.__errors&&window.__errors.length){var e=document.getElementById('js-errors');e.style.display='block';e.innerHTML='<strong style="color:red">JS Errors:</strong>'+window.__errors.map(function(x){return'<div>'+x+'</div>';}).join('');}</script>
+<!-- Vue 挂载点：class="has-bottom-nav" 让 .page-container 在手机端为底部导航预留空间 -->
+<div id="app" class="has-bottom-nav"></div>
 
-<div id="app">
-  <!-- Toast 通知 -->
-  <div v-if="toast.visible" class="toast" :class="toast.type">{{ toast.message }}</div>
-
-  <!-- ═══ 顶部固定栏（玻璃拟态） ═══ -->
-  <header class="topbar">
-    <!-- 汉堡按钮（平板/手机端） -->
-    <button class="hamburger-btn" @click="toggleSidebar" :class="{ open: sidebarOpen }">☰</button>
-
-    <!-- Logo + 系统名 -->
-    <div class="topbar-logo">
-      <span class="logo-icon">🌾</span>
-      <span class="logo-text">AgriDiagnose</span>
-    </div>
-
-    <!-- 面包屑 -->
-    <nav class="topbar-breadcrumb">
-      <span class="breadcrumb-item current">{{ currentTitle }}</span>
-    </nav>
-
-    <!-- 右侧用户区 -->
-    <div class="topbar-actions">
-      <!-- 管理员登录/退出 -->
-      <template v-if="admin.loggedIn">
-        <div class="admin-badge" @click="doAdminLogout" title="点击退出">
-          <span>👤</span>
-          <span>管理员</span>
-          <span class="admin-logout-hint">退出</span>
-        </div>
-      </template>
-      <template v-else>
-        <button class="btn-admin-login" @click="showLoginModal">
-          🔒 管理员登录
-        </button>
-      </template>
-      <div class="topbar-user">
-        <div class="user-avatar">G</div>
-        <span class="user-name">游客</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- 侧边栏 -->
-  <app-sidebar
-    :current-page="page"
-    :pages="pages"
-    :model-ready="system.modelReady"
-    :open="sidebarOpen"
-    @navigate="navigate"
-  ></app-sidebar>
-
-  <!-- 侧边栏遮罩（手机端） -->
-  <div class="sidebar-overlay" :class="{ open: sidebarOpen }" @click="closeSidebar"></div>
-
-  <!-- ═══ 管理员登录弹窗 ═══ -->
-  <div v-if="admin.showLoginModal" class="modal-overlay" @click.self="showLoginModal">
-    <div class="modal-dialog">
-      <button class="modal-close" @click="showLoginModal">✕</button>
-      <div class="modal-header">
-        <div class="modal-icon">🔒</div>
-        <h2 class="modal-title">管理员登录</h2>
-        <p class="modal-subtitle">请输入管理员密码以审核用户提交的数据</p>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label class="form-label">密码</label>
-          <input
-            type="password"
-            class="form-input"
-            v-model="admin.loginPassword"
-            placeholder="请输入管理员密码"
-            @keyup.enter="doAdminLogin"
-            autofocus
-          />
-        </div>
-        <div v-if="admin.loginError" class="form-error-msg" style="margin-bottom:12px;">
-          ⚠️ {{ admin.loginError }}
-        </div>
-        <button
-          class="btn btn-primary btn-block"
-          :disabled="admin.loginLoading"
-          @click="doAdminLogin"
-        >
-          {{ admin.loginLoading ? '⏳ 登录中...' : '🔑 登录' }}
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 主内容区（唯一可滚动区域） -->
-  <main class="main-content">
-    <div class="page-container">
-      <!-- 动态页面切换（带过渡动画） -->
-      <Transition name="page" mode="out-in">
-        <component :is="'page-' + page" :key="page"></component>
-      </Transition>
-    </div>
-  </main>
-</div>
-
-<!-- ═══════════ JS 基础设施 ═══════════ -->
-<script src="/static/js/router.js"></script>
-<script src="/static/js/api.js"></script>
-<script src="/static/js/store.js"></script>
-
-<!-- ═══════════ UI 组件 ═══════════ -->
-<script src="/static/js/components/app-loading.js"></script>
-<script src="/static/js/components/app-empty.js"></script>
-<script src="/static/js/components/app-error.js"></script>
-<script src="/static/js/components/app-conf-bar.js"></script>
-<script src="/static/js/components/app-top3-list.js"></script>
-<script src="/static/js/components/app-advice-card.js"></script>
-<script src="/static/js/components/app-result-card.js"></script>
-<script src="/static/js/components/app-image-uploader.js"></script>
-<script src="/static/js/components/app-sidebar.js"></script>
-<script src="/static/js/components/app-counter.js"></script>
-<script src="/static/js/components/app-scroll-reveal.js"></script>
-
-<!-- ═══════════ 页面组件 ═══════════ -->
-<script src="/static/js/pages/page-diagnose.js"></script>
-<script src="/static/js/pages/page-chat.js"></script>
-<script src="/static/js/pages/page-contribute.js"></script>
-<script src="/static/js/pages/page-encyclopedia.js"></script>
-<script src="/static/js/pages/page-history.js"></script>
-
-<!-- ═══════════ 应用入口 ═══════════ -->
-<script src="/static/js/app.js"></script>
+<!-- ═══════════ 应用入口（ES Module） ═══════════ -->
+<script type="module" src="/static/js/app/main.js"></script>
 
 </body>
 </html>

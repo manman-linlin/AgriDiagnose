@@ -2,6 +2,7 @@
    AgriDiagnose — 布局样式
    CSS Grid 三区域布局：固定顶栏 + 固定侧栏 + 滚动内容区
    整体 100vh，外层无滚动条，仅内容区 overflow-y: auto
+   企业后台风格：纯色背景，无玻璃拟态/漂浮装饰
    ══════════════════════════════════════════════════════════════ */
 
 /* ── 全局重置 ── */
@@ -15,58 +16,6 @@ html, body {
   color: var(--color-text);
   background: var(--color-page-bg);
   -webkit-font-smoothing: antialiased;
-}
-
-/* ══════════════════════════════════════════════════════════════
-   页面背景 — Mesh Gradient（流动渐变/极光效果）+ 叶片纹理
-   方案 A【推荐】：多层大圆 blur 叠加，模拟 Mesh Gradient
-   方案 B（备选）：CSS @property 动画流动渐变（见下方注释）
-   移动端降级：减少 blur 层数
-   ══════════════════════════════════════════════════════════════ */
-
-body::before {
-  content: '';
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none; z-index: -1;
-  background-image:
-    /* 叶片剪影纹理（保留原有） */
-    var(--texture-leaf);
-}
-
-/* 方案 A【推荐】— 独立伪元素承载 Mesh 色块，避免 texture-leaf 被 blur 影响 */
-body::after {
-  content: '';
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none; z-index: -2;
-  /* 5 个柔光色块模拟 Mesh Gradient */
-  background:
-    /* 左上 — 主绿色块 */
-    radial-gradient(ellipse 700px 500px at 10% 5%,  var(--mesh-color-1) 0%, transparent 60%),
-    /* 右上 — 嫩芽绿色块 */
-    radial-gradient(ellipse 500px 400px at 90% 15%, var(--mesh-color-2) 0%, transparent 55%),
-    /* 中间偏左 — 金色暖光 */
-    radial-gradient(ellipse 450px 350px at 30% 50%, var(--mesh-color-3) 0%, transparent 60%),
-    /* 右下 — 大地褐色块 */
-    radial-gradient(ellipse 500px 380px at 85% 80%, var(--mesh-color-4) 0%, transparent 55%),
-    /* 底部中间 — 翠绿色块 */
-    radial-gradient(ellipse 400px 250px at 50% 95%, var(--mesh-color-5) 0%, transparent 50%);
-  /* 轻微模糊让色块融合 */
-  filter: blur(50px);
-  /* GPU 加速 */
-  will-change: transform;
-  transform: translate3d(0, 0, 0);
-}
-
-/* 方案 B 备选 — CSS 动画版 Aurora（需要 Chromium 111+ / Safari 16+）
-   使用 @property 注册自定义属性的动态渐变，取消注释即可替换方案 A
-   详见文档末尾的 @property 声明块
-*/
-
-/* 移动端降级：减少 blur 强度，降低 GPU 负担 */
-@media (max-width: 767px) {
-  body::after {
-    filter: blur(40px);
-  }
 }
 
 a { color: var(--color-primary); text-decoration: none; }
@@ -93,18 +42,11 @@ a:hover { text-decoration: underline; }
   height: 100vh;
   overflow: hidden;               /* 外层永不滚动 */
   position: relative;
-  z-index: 1;
 }
 
 
 /* ══════════════════════════════════════════════════════════════
-   顶部固定栏
-   ══════════════════════════════════════════════════════════════ */
-
-/* ══════════════════════════════════════════════════════════════
-   顶部固定栏 — 玻璃拟态（Glassmorphism）
-   方案 A【推荐】：半透明 + backdrop-filter blur + 渐变底边
-   方案 B（备选）：纯色背景 + 微透明（移动端降级，见 responsive.css）
+   顶部固定栏 —— 纯白底 + 1px 描边，无 backdrop-filter
    ══════════════════════════════════════════════════════════════ */
 
 .topbar {
@@ -113,43 +55,11 @@ a:hover { text-decoration: underline; }
   align-items: center;
   gap: var(--space-md);
   padding: 0 var(--space-lg);
-  /* 方案 A — 玻璃拟态核心 */
-  background: var(--glass-bg-strong);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border-bottom: 1px solid var(--glass-border);
-  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
   z-index: var(--z-sidebar);
   position: relative;
 }
-
-/* 顶部栏 — 玻璃高光线（模拟光源在卡片上边缘的反射） */
-.topbar::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 1px;
-  background: var(--glass-highlight);
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* 顶部栏底部渐变装饰线 */
-.topbar::after {
-  content: '';
-  position: absolute; bottom: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-sprout), var(--color-gold));
-  opacity: 0.7;
-}
-
-/* 方案 B 备选 — 不含 backdrop-filter 的纯色顶部栏
-   在移动端或需兼容旧浏览器时，为 .topbar 追加 .topbar-solid 类即可
-   .topbar.topbar-solid {
-     background: var(--color-card);
-     backdrop-filter: none;
-     -webkit-backdrop-filter: none;
-   }
-*/
 
 /* ── Logo 区 ── */
 .topbar-logo {
@@ -162,15 +72,15 @@ a:hover { text-decoration: underline; }
   margin-right: var(--space-sm);
 }
 .topbar-logo .logo-icon {
-  font-size: 26px;
-  line-height: 1;
+  display: flex;
+  color: var(--color-primary);
 }
 .topbar-logo .logo-text {
   font-size: var(--font-size-lg);
   font-weight: 700;
   line-height: 1;
-  color: var(--color-primary-dark);
-  letter-spacing: 1px;
+  color: var(--color-text);
+  letter-spacing: 0.2px;
   white-space: nowrap;
 }
 
@@ -202,8 +112,8 @@ a:hover { text-decoration: underline; }
 .topbar-breadcrumb .breadcrumb-item.current {
   color: var(--color-text);
   font-weight: 600;
-  font-size: var(--font-size-lg);               /* 与左侧英文 logo 同字号 16px */
-  line-height: 1;                                /* 与 logo-text 相同行高，保证基线对齐 */
+  font-size: var(--font-size-lg);
+  line-height: 1;
 }
 
 /* ── 右侧用户区 ── */
@@ -227,14 +137,14 @@ a:hover { text-decoration: underline; }
   background: var(--color-bg);
 }
 .topbar-user .user-avatar {
-  width: 32px; height: 32px;
+  width: 28px; height: 28px;
   border-radius: var(--radius-round);
-  background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary-dark));
+  background: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-text-inverse);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   flex-shrink: 0;
 }
@@ -247,13 +157,12 @@ a:hover { text-decoration: underline; }
 /* ── 汉堡按钮（平板/手机端） ── */
 .topbar .hamburger-btn {
   display: none;
-  width: 36px; height: 36px;
+  width: 32px; height: 32px;
   align-items: center; justify-content: center;
   background: transparent;
-  color: var(--color-text);
+  color: var(--color-text-secondary);
   border: none;
   border-radius: var(--radius-sm);
-  font-size: 20px;
   cursor: pointer;
   flex-shrink: 0;
   transition: background var(--transition-fast);
@@ -264,8 +173,8 @@ a:hover { text-decoration: underline; }
 
 
 /* ══════════════════════════════════════════════════════════════
-   侧边栏（置于 Grid 第二行第一列）
-   桌面端：自然填充 Grid cell，不可滚动（若 nav 超长可在 .sidebar-nav 上 overflow）
+   侧边栏（置于 Grid 第二行第一列）—— 纯色深底，无渐变/发光
+   桌面端：自然填充 Grid cell
    平板端：收缩为 56px 图标栏
    手机端：退回到 position:fixed 浮层模式（由 responsive.css 处理）
    ══════════════════════════════════════════════════════════════ */
@@ -274,34 +183,13 @@ a:hover { text-decoration: underline; }
   grid-area: sidebar;
   display: flex;
   flex-direction: column;
-  background: var(--gradient-sidebar);
+  background: var(--color-sidebar);
   color: var(--color-text-inverse);
   z-index: var(--z-sidebar);
   transition: width var(--transition-normal),
               transform var(--transition-normal);
   overflow: hidden;
-  box-shadow: var(--shadow-sidebar);
-  position: relative;              /* 不再使用 fixed */
-}
-
-/* 侧边栏顶部装饰线 */
-.sidebar::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #4CAF50, #81C784, #A5D6A7, #81C784, #4CAF50);
-  opacity: 0.8;
-  z-index: 1;
-}
-
-/* 侧边栏底部装饰光晕 */
-.sidebar::after {
-  content: '';
-  position: absolute; bottom: 0; left: 0; right: 0;
-  height: 120px;
-  background: radial-gradient(ellipse at 50% 100%, rgba(76, 175, 80, 0.08) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
+  position: relative;
 }
 
 /* Logo 区域 */
@@ -309,38 +197,28 @@ a:hover { text-decoration: underline; }
   padding: var(--space-lg) var(--space-md) var(--space-md);
   text-align: center;
   flex-shrink: 0;
-  position: relative;
-  z-index: 1;
+  background: var(--color-sidebar-header);
 }
 .sidebar-logo .logo-icon {
-  font-size: 32px; display: block; margin-bottom: 6px;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  display: flex;
+  justify-content: center;
+  color: var(--color-sidebar-indicator);
+  margin-bottom: 6px;
 }
 .sidebar-logo .logo-title {
   font-size: var(--font-size-lg); font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 0.5px;
 }
 .sidebar-logo .logo-subtitle {
   font-size: var(--font-size-xs);
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.4);
   margin-top: 2px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-/* Logo 区装饰线 */
-.sidebar-logo::after {
-  content: '';
-  display: block;
-  width: 40px; height: 2px;
-  margin: 12px auto 0;
-  background: linear-gradient(90deg, transparent, var(--color-sidebar-indicator), transparent);
-  border-radius: 1px;
+  letter-spacing: 0.5px;
 }
 
 .sidebar-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-sidebar-divider), transparent);
+  background: var(--color-sidebar-divider);
   margin: 0 var(--space-md);
   flex-shrink: 0;
 }
@@ -351,65 +229,46 @@ a:hover { text-decoration: underline; }
   padding: var(--space-sm) var(--space-sm);
   list-style: none;
   overflow-y: auto;
-  position: relative;
-  z-index: 1;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 10px 14px;
   margin: 2px 0;
   color: var(--color-sidebar-text);
   font-size: var(--font-size-md);
   cursor: pointer;
   border-radius: var(--radius-md);
-  border-left: none;
-  transition: all var(--transition-normal);
+  transition: background var(--transition-fast), color var(--transition-fast);
   user-select: none;
   position: relative;
 }
 .nav-item:hover {
   background: var(--color-sidebar-hover);
-  color: #C8E6C9;
+  color: var(--color-sidebar-active);
 }
 .nav-item.active {
   color: var(--color-sidebar-active);
   font-weight: 600;
   background: var(--color-sidebar-active-bg);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-/* 选中态左侧指示圆点 — 方案 A【推荐】：发光指示器 */
+/* 选中态左侧指示条 */
 .nav-item.active::before {
   content: '';
-  position: absolute; left: 4px; top: 50%;
+  position: absolute; left: 0; top: 50%;
   transform: translateY(-50%);
-  width: 4px; height: 20px;
+  width: 3px; height: 18px;
   background: var(--color-sidebar-indicator);
-  border-radius: 2px;
-  box-shadow: var(--glow-sidebar-indicator);
+  border-radius: 0 2px 2px 0;
 }
-
-/* 方案 B（备选）：圆点指示器
-   .nav-item.active::before {
-     width: 8px; height: 8px;
-     border-radius: var(--radius-round);
-     left: 10px;
-     box-shadow: var(--glow-sidebar-indicator);
-   }
-*/
 
 .nav-item .nav-icon {
-  font-size: 18px;
-  width: 24px;
-  text-align: center;
+  display: flex;
+  width: 20px;
   flex-shrink: 0;
-  transition: transform var(--transition-fast);
-}
-.nav-item:hover .nav-icon {
-  transform: scale(1.1);
 }
 .nav-item .nav-text {
   white-space: nowrap;
@@ -421,9 +280,6 @@ a:hover { text-decoration: underline; }
   padding: var(--space-md);
   border-top: 1px solid var(--color-sidebar-divider);
   flex-shrink: 0;
-  position: relative;
-  z-index: 1;
-  background: rgba(0, 0, 0, 0.15);
 }
 .sidebar-status .status-row {
   display: flex;
@@ -432,33 +288,21 @@ a:hover { text-decoration: underline; }
   margin-bottom: 6px;
 }
 .sidebar-status .status-dot {
-  width: 8px; height: 8px; border-radius: var(--radius-round);
+  width: 7px; height: 7px; border-radius: var(--radius-round);
   flex-shrink: 0;
-  position: relative;
 }
-.sidebar-status .status-dot.online  {
-  background: var(--color-success);
-  box-shadow: 0 0 6px rgba(67, 160, 71, 0.6);
-}
-.sidebar-status .status-dot.loading {
-  background: var(--color-warning);
-  animation: status-pulse 1.5s ease-in-out infinite;
-}
+.sidebar-status .status-dot.online  { background: var(--color-success); }
+.sidebar-status .status-dot.loading { background: var(--color-warning); }
 .sidebar-status .status-dot.offline { background: var(--color-error); }
 .sidebar-status .status-text {
   font-size: var(--font-size-xs);
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.5);
 }
 .sidebar-status .status-version {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.28);
   margin-top: 2px;
   letter-spacing: 0.5px;
-}
-
-@keyframes status-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
 }
 
 
@@ -472,9 +316,6 @@ a:hover { text-decoration: underline; }
   overflow-y: auto;
   overflow-x: hidden;
   scroll-behavior: smooth;
-  transition: margin-left var(--transition-normal);
-  /* 3D 页面切换透视 — 配合 animations.css 中的 .page-* 与 <Transition> */
-  perspective: var(--perspective-page);
 }
 
 .page-container {
@@ -489,137 +330,20 @@ a:hover { text-decoration: underline; }
   display: none;                    /* 默认隐藏，responsive.css 中按断点显示 */
 }
 
+/* ── 手机端底部 Tab 导航（桌面/平板隐藏，responsive.css 中 <768px 显示） ── */
+.mobile-bottom-nav {
+  display: none;
+}
+
 /* 遮罩层（手机端侧边栏展开时） */
 .sidebar-overlay {
   display: none;
   position: fixed; top: var(--topbar-height); left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.4); z-index: calc(var(--z-sidebar) - 1);
+  background: rgba(15, 23, 42, 0.4); z-index: calc(var(--z-sidebar) - 1);
   opacity: 0; pointer-events: none;
   transition: opacity var(--transition-normal);
 }
 .sidebar-overlay.open {
   opacity: 1;
   pointer-events: auto;
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   侧边栏玻璃拟态变体
-   方案 A【推荐】：深色半透明玻璃（需手动给 .sidebar 追加 .sidebar-glass）
-   方案 B（备选）：当前渐变背景保持不动（默认方案，性能最优）
-   ══════════════════════════════════════════════════════════════ */
-
-/* 方案 A — 启用玻璃侧边栏 */
-.sidebar.sidebar-glass {
-  background: var(--glass-bg-dark);
-  backdrop-filter: blur(var(--glass-blur-strong));
-  -webkit-backdrop-filter: blur(var(--glass-blur-strong));
-  border-right: 1px solid var(--glass-border-dark);
-  box-shadow: var(--glass-shadow);
-}
-
-/* 玻璃侧边栏顶部高光线 */
-.sidebar.sidebar-glass::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--glass-border-strong), transparent);
-  opacity: 0.6;
-  z-index: 2;
-}
-
-/* 玻璃侧边栏 — 底部状态栏适配 */
-.sidebar.sidebar-glass .sidebar-status {
-  background: rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   装饰性光斑/光晕 (Decorative Light Orbs)
-   固定在视口背景层，营造"智慧田园"柔和光感
-   两种方案通过不同 CSS 类控制
-   ══════════════════════════════════════════════════════════════ */
-
-/* 方案 A【推荐】— 静态柔光斑（性能最优，适合生产环境） */
-.decor-orbs {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none;
-  z-index: var(--z-float-decor, -1);
-  overflow: hidden;
-}
-
-.decor-orbs::before {
-  content: '';
-  position: absolute;
-  top: -120px; left: -80px;
-  width: 500px; height: 500px;
-  background: var(--glow-orb-green);
-  border-radius: 50%;
-  animation: orb-float-1 18s ease-in-out infinite;
-}
-
-.decor-orbs::after {
-  content: '';
-  position: absolute;
-  bottom: -100px; right: -60px;
-  width: 420px; height: 420px;
-  background: var(--glow-orb-amber);
-  border-radius: 50%;
-  animation: orb-float-2 22s ease-in-out infinite;
-}
-
-/* 中间第三个光斑（需额外空元素） */
-.decor-orb-center {
-  position: absolute;
-  top: 40%; left: 55%;
-  width: 300px; height: 300px;
-  background: var(--glow-orb-earth);
-  border-radius: 50%;
-  animation: orb-float-3 20s ease-in-out infinite;
-}
-
-@keyframes orb-float-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33%      { transform: translate(40px, 30px) scale(1.08); }
-  66%      { transform: translate(-20px, 50px) scale(0.95); }
-}
-
-@keyframes orb-float-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33%      { transform: translate(-30px, -20px) scale(1.06); }
-  66%      { transform: translate(20px, -40px) scale(0.94); }
-}
-
-@keyframes orb-float-3 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50%      { transform: translate(-25px, 30px) scale(1.1); }
-}
-
-/* 方案 B 备选 — 更强烈的动态极光光斑（适合展示页/登录页）
-   .decor-orbs-aurora::before {
-     background: radial-gradient(circle, rgba(76,175,80,0.25) 0%, rgba(124,179,66,0.12) 40%, transparent 70%);
-     animation: orb-float-1 12s ease-in-out infinite;
-   }
-   .decor-orbs-aurora::after {
-     background: radial-gradient(circle, rgba(249,168,37,0.20) 0%, rgba(255,183,77,0.08) 40%, transparent 70%);
-     animation: orb-float-2 14s ease-in-out infinite;
-   }
-*/
-
-/* 移动端降级：减小光斑尺寸 + 简化动画 */
-@media (max-width: 767px) {
-  .decor-orbs::before {
-    width: 300px; height: 300px;
-    animation-duration: 24s;
-  }
-  .decor-orbs::after {
-    width: 260px; height: 260px;
-    animation-duration: 28s;
-  }
-  .decor-orb-center {
-    width: 180px; height: 180px;
-    animation-duration: 26s;
-  }
 }
