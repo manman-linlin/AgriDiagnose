@@ -1,0 +1,38 @@
+[
+  {
+    "id": "2e682e4bd764",
+    "mode": "extend",
+    "submit_time": "2026-07-22 17:06:10",
+    "status": "pending",
+    "existing_class": "Apple___Apple_scab",
+    "crop_name": "",
+    "disease_name": "",
+    "disease_description": "",
+    "image_count": 1,
+    "image_paths": [
+      "Data/contributed/extend/Apple___Apple_scab/ext_Appl_Apple_scab_20260722_170610_001.jpg"
+    ],
+    "location": "",
+    "photo_date": "",
+    "notes": "",
+    "review_notes": ""
+  },
+  {
+    "id": "65cb9eccfec0",
+    "mode": "extend",
+    "submit_time": "2026-07-22 16:53:52",
+    "status": "pending",
+    "existing_class": "Apple___Apple_scab",
+    "crop_name": "",
+    "disease_name": "",
+    "disease_description": "",
+    "image_count": 1,
+    "image_paths": [
+      "Data/contributed/extend/Apple___Apple_scab/ext_Appl_Apple_scab_20260722_165352_001.jpg"
+    ],
+    "location": "",
+    "photo_date": "",
+    "notes": "",
+    "review_notes": ""
+  }
+]
