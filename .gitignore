@@ -32,3 +32,6 @@ Thumbs.db
 
 # Agent 密钥
 4.Agent/.env
+
+# 管理后台系统配置（含 LLM API Key 明文，不入库）
+3.Web/Backend/app/data/config.json

@@ -6,6 +6,7 @@
 import io
 import json
 import os
+import re
 import secrets
 import time
 import uuid
@@ -579,59 +580,163 @@ def admin_model_training_cancel(_: None = Depends(_require_admin)):
 # ── 系统配置 API ──────────────────────────────────────
 CONFIG_FILE = BACKEND_DIR / "app" / "data" / "config.json"
 
+# 预置服务商：均为 OpenAI 兼容协议（Bearer Token + /chat/completions），
+# 百度文心一言、讯飞星火等鉴权方式不同的平台不放进来，选了也调不通。
+DEFAULT_LLM_PROVIDERS = [
+    {
+        "id": "siliconflow", "name": "硅基流动 SiliconFlow",
+        "base_url": "https://api.siliconflow.cn/v1", "api_key": "",
+        "models": ["Qwen/Qwen3-VL-8B-Instruct", "Qwen/Qwen2.5-VL-72B-Instruct", "deepseek-ai/DeepSeek-V3"],
+        "default_model": "Qwen/Qwen3-VL-8B-Instruct",
+    },
+    {
+        "id": "deepseek", "name": "DeepSeek 官方",
+        "base_url": "https://api.deepseek.com/v1", "api_key": "",
+        "models": ["deepseek-chat", "deepseek-reasoner"],
+        "default_model": "deepseek-chat",
+    },
+    {
+        "id": "zhipu", "name": "智谱AI GLM",
+        "base_url": "https://open.bigmodel.cn/api/paas/v4", "api_key": "",
+        "models": ["glm-4v", "glm-4-plus", "glm-4-flash"],
+        "default_model": "glm-4v",
+    },
+    {
+        "id": "moonshot", "name": "月之暗面 Kimi",
+        "base_url": "https://api.moonshot.cn/v1", "api_key": "",
+        "models": ["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"],
+        "default_model": "moonshot-v1-8k",
+    },
+    {
+        "id": "dashscope", "name": "阿里云百炼（通义千问）",
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1", "api_key": "",
+        "models": ["qwen-vl-max", "qwen-plus", "qwen-turbo"],
+        "default_model": "qwen-vl-max",
+    },
+    {
+        "id": "volcengine", "name": "火山方舟（豆包）",
+        "base_url": "https://ark.cn-beijing.volces.com/api/v3", "api_key": "",
+        "models": ["doubao-1-5-vision-pro-32k", "doubao-1-5-pro-32k"],
+        "default_model": "doubao-1-5-vision-pro-32k",
+    },
+    {
+        "id": "openai", "name": "OpenAI 官方",
+        "base_url": "https://api.openai.com/v1", "api_key": "",
+        "models": ["gpt-4o", "gpt-4o-mini"],
+        "default_model": "gpt-4o",
+    },
+    {
+        "id": "groq", "name": "Groq",
+        "base_url": "https://api.groq.com/openai/v1", "api_key": "",
+        "models": ["llama-3.2-90b-vision-preview", "llama-3.3-70b-versatile"],
+        "default_model": "llama-3.2-90b-vision-preview",
+    },
+    {
+        "id": "custom", "name": "自定义",
+        "base_url": "", "api_key": "",
+        "models": [], "default_model": "",
+    },
+]
+
+
+def _default_config() -> dict:
+    return {
+        "llm_providers": [dict(p) for p in DEFAULT_LLM_PROVIDERS],
+        "active_provider": "",
+        "system": {
+            "max_upload_size_mb": 10,
+            "max_images_per_contribution": 20,
+            "allowed_image_types": ["jpg", "jpeg", "png", "webp"],
+        },
+    }
+
+
 def _load_config() -> dict:
     if CONFIG_FILE.exists():
-        import json as _json
         with CONFIG_FILE.open("r", encoding="utf-8") as f:
-            return _json.load(f)
-    return {"llm_providers": [], "active_provider": "", "system": {}}
+            return json.load(f)
+    cfg = _default_config()
+    _save_config(cfg)
+    return cfg
+
 
 def _save_config(cfg: dict):
     CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
-    import json as _json
     with CONFIG_FILE.open("w", encoding="utf-8") as f:
-        _json.dump(cfg, f, ensure_ascii=False, indent=2)
+        json.dump(cfg, f, ensure_ascii=False, indent=2)
+
+
+def _mask_key(key: str) -> str:
+    if key and len(key) > 8:
+        return key[:4] + "****" + key[-4:]
+    return ""
 
 
 @app.get("/api/admin/config/llm")
 def admin_config_llm(_: None = Depends(_require_admin)):
-    """获取 LLM 配置列表（API Key 脱敏）。"""
+    """获取 LLM 服务商列表（不下发明文 Key）+ 当前生效的服务商。"""
     cfg = _load_config()
-    providers = cfg.get("llm_providers", [])
-    for p in providers:
-        key = p.get("api_key", "")
-        if key and len(key) > 8:
-            p["api_key"] = key[:4] + "****" + key[-4:]
-    return {"code": 200, "data": providers}
+    providers = [
+        {
+            "id": p.get("id"),
+            "name": p.get("name"),
+            "base_url": p.get("base_url", ""),
+            "default_model": p.get("default_model", ""),
+            "models": p.get("models", []),
+            "has_key": bool(p.get("api_key")),
+            "api_key_hint": _mask_key(p.get("api_key", "")),
+        }
+        for p in cfg.get("llm_providers", [])
+    ]
+    return {"code": 200, "data": {"providers": providers, "active_provider": cfg.get("active_provider", "")}}
 
 
 @app.put("/api/admin/config/llm/{provider_id}")
 def admin_config_llm_update(provider_id: str, _: None = Depends(_require_admin), payload: dict = Body(...)):
-    """更新 LLM 服务商配置。"""
+    """更新某个服务商的 API Key / 模型 / 接口地址。空字符串的 api_key 视为“不修改”，避免误清空已保存的 Key。"""
     cfg = _load_config()
     for p in cfg.get("llm_providers", []):
         if p.get("id") == provider_id:
-            p.update(payload)
+            if payload.get("api_key"):
+                p["api_key"] = payload["api_key"].strip()
+            if "default_model" in payload:
+                p["default_model"] = (payload["default_model"] or "").strip()
+            if provider_id == "custom" and "base_url" in payload:
+                p["base_url"] = (payload["base_url"] or "").strip()
             _save_config(cfg)
             return {"code": 200, "message": "已保存"}
     return JSONResponse(status_code=404, content={"code": 404, "message": "未找到该服务商"})
 
 
+@app.put("/api/admin/config/active/{provider_id}")
+def admin_config_set_active(provider_id: str, _: None = Depends(_require_admin)):
+    """把某个服务商设为当前生效的 AI 对话/诊断建议模型。"""
+    cfg = _load_config()
+    provider = next((p for p in cfg.get("llm_providers", []) if p.get("id") == provider_id), None)
+    if not provider:
+        return JSONResponse(status_code=404, content={"code": 404, "message": "未找到该服务商"})
+    if not provider.get("api_key") or not provider.get("base_url") or not provider.get("default_model"):
+        return JSONResponse(status_code=400, content={"code": 400, "message": "请先填写 API Key、接口地址和模型"})
+    cfg["active_provider"] = provider_id
+    _save_config(cfg)
+    return {"code": 200, "message": f"已启用「{provider.get('name')}」"}
+
+
 @app.post("/api/admin/config/llm/test")
 def admin_config_llm_test(_: None = Depends(_require_admin), payload: dict = Body(...)):
-    """测试 LLM 连接。"""
+    """测试 LLM 连接：优先用请求里传的未保存值，没传则用已保存的值。"""
     import requests as req
     provider_id = payload.get("provider_id", "")
     cfg = _load_config()
     provider = next((p for p in cfg.get("llm_providers", []) if p.get("id") == provider_id), None)
-    if not provider or not provider.get("api_key"):
-        return JSONResponse(status_code=400, content={"code": 400, "message": "服务商未配置"})
+    if not provider:
+        return JSONResponse(status_code=404, content={"code": 404, "message": "未找到该服务商"})
+    api_key = (payload.get("api_key") or provider.get("api_key") or "").strip()
+    base_url = (payload.get("base_url") or provider.get("base_url") or "").strip().rstrip("/")
+    if not api_key or not base_url:
+        return JSONResponse(status_code=400, content={"code": 400, "message": "请先填写 API Key 和接口地址"})
     try:
-        resp = req.get(
-            provider["base_url"].replace("/chat/completions", "/models"),
-            headers={"Authorization": f"Bearer {provider['api_key']}"},
-            timeout=10,
-        )
+        resp = req.get(base_url + "/models", headers={"Authorization": f"Bearer {api_key}"}, timeout=10)
         ok = resp.status_code == 200
         return {"code": 200, "data": {"ok": ok, "status": resp.status_code}}
     except Exception as e:

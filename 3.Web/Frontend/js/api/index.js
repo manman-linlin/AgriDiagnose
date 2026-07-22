@@ -122,8 +122,11 @@ export function adminConfigLlm() {
 export function adminConfigLlmUpdate(providerId, data) {
   return request('PUT', `/api/admin/config/llm/${providerId}`, data);
 }
-export function adminConfigLlmTest(providerId) {
-  return request('POST', '/api/admin/config/llm/test', { provider_id: providerId });
+export function adminConfigSetActive(providerId) {
+  return request('PUT', `/api/admin/config/active/${providerId}`);
+}
+export function adminConfigLlmTest(providerId, data) {
+  return request('POST', '/api/admin/config/llm/test', { provider_id: providerId, ...data });
 }
 export function adminConfigSystem() {
   return request('GET', '/api/admin/config/system');

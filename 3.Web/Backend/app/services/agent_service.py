@@ -22,18 +22,14 @@ __all__ = [
 
 MAX_HISTORY_TURNS = agent_config.MAX_HISTORY_TURNS
 
-_agent = None
-
-
 def is_ready() -> bool:
     return agent_config.is_configured()
 
 
 def _get_agent() -> LLMAgent:
-    global _agent
-    if _agent is None:
-        _agent = LLMAgent()
-    return _agent
+    # 不做单例缓存：管理员在后台切换服务商/Key 后应立即生效，
+    # 而 LLMAgent() 本身很轻（无网络调用），每次重建成本可以忽略。
+    return LLMAgent()
 
 
 def diagnose_advice(image_bytes: bytes, crop: str, disease: str, confidence: float) -> dict:

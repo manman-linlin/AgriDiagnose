@@ -1,5 +1,8 @@
-import { ref, onMounted } from 'vue';
-import { adminConfigLlm, adminConfigLlmUpdate, adminConfigLlmTest, adminConfigSystem, adminConfigSystemUpdate } from '../../../api/index.js';
+import { ref, computed, onMounted } from 'vue';
+import {
+  adminConfigLlm, adminConfigLlmUpdate, adminConfigSetActive, adminConfigLlmTest,
+  adminConfigSystem, adminConfigSystemUpdate,
+} from '../../../api/index.js';
 import { useUiStore } from '../../../stores/ui.js';
 import PageHeader from '../../../shared/components/PageHeader.js';
 import AppIcon from '../../../shared/components/AppIcon.js';
@@ -12,41 +15,110 @@ export default {
     const ui = useUiStore();
     const loading = ref(true);
     const providers = ref([]);
-    const system = ref({ maxUploadMB: 10, maxImages: 20, allowedTypes: 'jpg,jpeg,png,webp' });
-    const expanded = ref(null);
-    const testing = ref({});
+    const activeProviderId = ref('');
+    const selectedId = ref('');
+    const apiKeyInput = ref('');
+    const modelInput = ref('');
+    const baseUrlInput = ref('');
+    const saving = ref(false);
+    const testing = ref(false);
+    const system = ref({ maxUploadMB: 10, maxImages: 20 });
+
+    const selectedProvider = computed(() => providers.value.find((p) => p.id === selectedId.value) || null);
+    const isCustom = computed(() => selectedId.value === 'custom');
+    const isActiveSelected = computed(() => !!selectedId.value && selectedId.value === activeProviderId.value);
+    const activeProvider = computed(() => providers.value.find((p) => p.id === activeProviderId.value) || null);
+
+    function loadSelection(id) {
+      const p = providers.value.find((x) => x.id === id);
+      if (!p) return;
+      selectedId.value = id;
+      apiKeyInput.value = ''; // 出于安全不回显已保存的 Key，留空 = 不修改
+      modelInput.value = p.default_model || '';
+      baseUrlInput.value = p.base_url || '';
+    }
 
     async function load() {
       loading.value = true;
       try {
-        providers.value = await adminConfigLlm();
-        system.value = await adminConfigSystem();
+        const [llmData, sysData] = await Promise.all([adminConfigLlm(), adminConfigSystem()]);
+        providers.value = llmData.providers;
+        activeProviderId.value = llmData.active_provider || '';
+        system.value = sysData;
+        const initial = selectedId.value || activeProviderId.value || (providers.value[0] && providers.value[0].id) || '';
+        if (initial) loadSelection(initial);
       } catch { /* 降级 */ }
       finally { loading.value = false; }
     }
 
-    async function saveProvider(id) {
-      const p = providers.value.find(x => x.id === id);
+    async function saveAndActivate() {
+      const p = selectedProvider.value;
       if (!p) return;
-      try { await adminConfigLlmUpdate(id, p); ui.showToast('已保存', 'success'); }
-      catch { ui.showToast('保存失败', 'error'); }
+      if (!apiKeyInput.value.trim() && !p.has_key) {
+        ui.showToast('请填写 API Key', 'error');
+        return;
+      }
+      if (!modelInput.value.trim()) {
+        ui.showToast('请填写模型名称', 'error');
+        return;
+      }
+      if (isCustom.value && !baseUrlInput.value.trim()) {
+        ui.showToast('自定义服务商需要填写接口地址', 'error');
+        return;
+      }
+      saving.value = true;
+      try {
+        const payload = { default_model: modelInput.value.trim() };
+        if (apiKeyInput.value.trim()) payload.api_key = apiKeyInput.value.trim();
+        if (isCustom.value) payload.base_url = baseUrlInput.value.trim();
+        await adminConfigLlmUpdate(p.id, payload);
+        await adminConfigSetActive(p.id);
+        ui.showToast('已保存并启用', 'success');
+        await load();
+      } catch (e) {
+        ui.showToast(e.message || '保存失败', 'error');
+      } finally {
+        saving.value = false;
+      }
     }
 
-    async function testProvider(id) {
-      testing.value[id] = true;
-      try { await adminConfigLlmTest(id); ui.showToast('连接成功', 'success'); }
-      catch { ui.showToast('连接失败', 'error'); }
-      finally { testing.value[id] = false; }
+    async function testConnection() {
+      const p = selectedProvider.value;
+      if (!p) return;
+      if (!apiKeyInput.value.trim() && !p.has_key) {
+        ui.showToast('请先填写 API Key 再测试', 'error');
+        return;
+      }
+      testing.value = true;
+      try {
+        const data = await adminConfigLlmTest(p.id, {
+          api_key: apiKeyInput.value.trim() || undefined,
+          base_url: isCustom.value ? baseUrlInput.value.trim() : undefined,
+        });
+        ui.showToast(data.ok ? '连接成功' : `连接失败：${data.error || ('HTTP ' + data.status)}`, data.ok ? 'success' : 'error');
+      } catch (e) {
+        ui.showToast(e.message || '测试失败', 'error');
+      } finally {
+        testing.value = false;
+      }
     }
 
     async function saveSystem() {
-      try { await adminConfigSystemUpdate(system.value); ui.showToast('系统参数已保存', 'success'); }
-      catch { ui.showToast('保存失败', 'error'); }
+      try {
+        await adminConfigSystemUpdate(system.value);
+        ui.showToast('系统参数已保存', 'success');
+      } catch {
+        ui.showToast('保存失败', 'error');
+      }
     }
 
     onMounted(load);
 
-    return { loading, providers, system, expanded, testing, saveProvider, testProvider, saveSystem, toggle(p) { expanded.value = expanded.value === p ? null : p; } };
+    return {
+      loading, providers, activeProviderId, activeProvider, selectedId, selectedProvider, isCustom, isActiveSelected,
+      apiKeyInput, modelInput, baseUrlInput, saving, testing, system,
+      loadSelection, saveAndActivate, testConnection, saveSystem,
+    };
   },
   template: `
     <div>
@@ -54,26 +126,59 @@ export default {
       <app-loading v-if="loading" text="加载配置..."></app-loading>
 
       <div v-if="!loading">
-        <!-- LLM 服务商 -->
-        <div v-for="p in providers" :key="p.id" class="card" style="margin-bottom:12px;">
-          <div @click="toggle(p.id)" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
-            <div style="display:flex;align-items:center;gap:10px;">
-              <app-icon name="chevron-down" :size="14" style="transition:transform 0.2s;" :style="{transform:expanded===p.id?'rotate(180deg)':''}"></app-icon>
-              <strong>{{ p.name }}</strong>
-              <span class="status-dot" :style="{background:p.enabled?'var(--color-success)':'var(--color-border)',width:'8px',height:'8px',borderRadius:'50%'}"></span>
-            </div>
-            <span class="tag tag-sm" :class="p.enabled?'tag-status-approved':'tag-status-rejected'">{{ p.enabled ? '已启用' : '已禁用' }}</span>
+        <!-- 大模型配置 -->
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header"><app-icon name="cpu" :size="16"></app-icon> 大模型配置（AI 对话 / 诊断建议）</div>
+
+          <p style="font-size:13px;color:var(--color-text-secondary,#888);margin:0 0 14px;">
+            当前生效：
+            <strong v-if="activeProvider" style="color:var(--color-success);">{{ activeProvider.name }}（{{ activeProvider.default_model }}）</strong>
+            <span v-else style="color:var(--color-danger,#e05252);">尚未启用任何服务商，AI 对话与诊断建议功能不可用</span>
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">选择服务商</label>
+            <select class="form-input" v-model="selectedId" @change="loadSelection(selectedId)">
+              <option v-for="p in providers" :key="p.id" :value="p.id">
+                {{ p.name }}{{ p.id === activeProviderId ? '（当前使用）' : (p.has_key ? '（已配置）' : '') }}
+              </option>
+            </select>
           </div>
-          <div :style="{maxHeight:expanded===p.id?'400px':'0',opacity:expanded===p.id?'1':'0',overflow:'hidden',transition:'max-height 0.3s ease, opacity 0.25s ease',marginTop:expanded===p.id?'12px':'0'}">
-            <div class="form-group"><label class="form-label">API Key</label><input class="form-input" v-model="p.api_key" type="password" /></div>
-            <div class="form-group"><label class="form-label">接口地址</label><input class="form-input" v-model="p.base_url" /></div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;">
-                <input type="checkbox" v-model="p.enabled" /> 启用
-              </label>
-              <button class="btn btn-sm btn-primary" @click="saveProvider(p.id)">保存</button>
-              <button class="btn btn-sm btn-outline" :disabled="testing[p.id]" @click="testProvider(p.id)">{{ testing[p.id] ? '测试中...' : '测试连接' }}</button>
-            </div>
+
+          <div class="form-group" v-if="isCustom">
+            <label class="form-label">接口地址</label>
+            <input class="form-input" v-model="baseUrlInput" placeholder="https://your-api.example.com/v1（OpenAI 兼容 /chat/completions 协议）" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">API Key</label>
+            <input
+              class="form-input" type="password" v-model="apiKeyInput"
+              :placeholder="selectedProvider && selectedProvider.has_key ? ('已设置：' + selectedProvider.api_key_hint + '，留空则不修改') : '请输入 API Key'"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">模型</label>
+            <input class="form-input" v-model="modelInput" list="llm-model-suggestions" placeholder="模型名称" />
+            <datalist id="llm-model-suggestions">
+              <option v-for="m in (selectedProvider ? selectedProvider.models : [])" :key="m" :value="m"></option>
+            </datalist>
+            <p style="font-size:12px;color:var(--color-text-secondary,#888);margin:6px 0 0;">
+              诊断建议需要解析图片，请选择支持图片输入的视觉模型；纯文本模型可用于 AI 问答，但无法生成诊断开场白。
+            </p>
+          </div>
+
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <span class="tag tag-sm" :class="isActiveSelected ? 'tag-status-approved' : 'tag-status-rejected'">
+              {{ isActiveSelected ? '✅ 当前生效' : '未启用' }}
+            </span>
+            <button class="btn btn-primary" :disabled="saving" @click="saveAndActivate">
+              {{ saving ? '保存中...' : '💾 保存并启用' }}
+            </button>
+            <button class="btn btn-outline" :disabled="testing" @click="testConnection">
+              {{ testing ? '测试中...' : '测试连接' }}
+            </button>
           </div>
         </div>
 

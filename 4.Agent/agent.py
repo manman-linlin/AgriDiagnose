@@ -40,24 +40,28 @@ def _extract_json(text: str) -> dict | None:
 
 class LLMAgent:
     def __init__(self):
-        if not config.is_configured():
+        api_key, model, base_url = config.get_llm_settings()
+        if not (api_key and model):
             raise AgentError(
-                "Agent 未配置：请在 4.Agent/.env 中设置 LLM_API_KEY 和 LLM_MODEL"
+                "Agent 未配置：请在管理后台「系统配置」里设置 API Key，"
+                "或在 4.Agent/.env 中设置 LLM_API_KEY 和 LLM_MODEL"
             )
+        self._model = model
+        self._base_url = base_url
         self._headers = {
-            "Authorization": f"Bearer {config.LLM_API_KEY}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
 
     def _call(self, messages: list[dict]) -> str:
         payload = {
-            "model": config.LLM_MODEL,
+            "model": self._model,
             "messages": messages,
             "temperature": 0.3,
         }
         try:
             resp = requests.post(
-                config.LLM_BASE_URL,
+                self._base_url,
                 headers=self._headers,
                 json=payload,
                 timeout=config.REQUEST_TIMEOUT,
@@ -78,14 +82,14 @@ class LLMAgent:
     def _call_stream(self, messages: list[dict]):
         """流式调用，逐段 yield 文本增量。"""
         payload = {
-            "model": config.LLM_MODEL,
+            "model": self._model,
             "messages": messages,
             "temperature": 0.3,
             "stream": True,
         }
         try:
             resp = requests.post(
-                config.LLM_BASE_URL,
+                self._base_url,
                 headers=self._headers,
                 json=payload,
                 timeout=config.REQUEST_TIMEOUT,
