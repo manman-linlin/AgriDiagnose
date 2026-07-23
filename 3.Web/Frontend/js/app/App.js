@@ -19,7 +19,7 @@ import PageChat from '../features/chat/page.js';
 import PageContribute from '../features/contribute/page.js';
 import PageEncyclopedia from '../features/encyclopedia/page.js';
 import PageHistory from '../features/history/page.js';
-import AdminLayout from '../features/admin/AdminLayout.js';
+import AdminLayout from '../features/admin/AdminLayout.js?v=model-admin-20260723-3';
 
 const PAGE_COMPONENTS = {
   diagnose: PageDiagnose,
@@ -36,6 +36,8 @@ export default {
     const ui = useUiStore();
     const admin = useAdminStore();
     const sidebarOpen = ref(false);
+
+    admin.restoreSession();
 
     function navigate(page) {
       routerNavigate(page);
@@ -62,7 +64,6 @@ export default {
     onMounted(() => {
       initRouter();
       ui.checkHealth();
-      admin.restoreSession();
     });
 
     return {

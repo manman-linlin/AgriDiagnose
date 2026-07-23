@@ -34,6 +34,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def no_cache_frontend_assets(request, call_next):
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+    return response
+
+
 # ── 路径 ────────────────────────────────────────────
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "Frontend"
@@ -525,41 +535,133 @@ def admin_model_classes(_: None = Depends(_require_admin)):
 @app.get("/api/admin/model/devices")
 def admin_model_devices(_: None = Depends(_require_admin)):
     """检测可用训练设备。"""
+    import platform
     import torch
-    devices = []
+    cpu_model = platform.processor() or platform.machine() or "CPU"
+    devices = [{
+        "id": "auto",
+        "type": "auto",
+        "name": "自动选择",
+        "model": "GPU / CPU",
+        "index": None,
+        "recommended": True,
+        "description": "优先使用可用 GPU，没有 GPU 时自动回退到 CPU。",
+    }]
     if torch.cuda.is_available():
         for i in range(torch.cuda.device_count()):
-            devices.append({"type": "cuda", "name": torch.cuda.get_device_name(i), "index": i})
-    devices.append({"type": "cpu", "name": "CPU", "index": -1})
+            memory = ""
+            try:
+                props = torch.cuda.get_device_properties(i)
+                memory = f"{props.total_memory / 1024 ** 3:.1f} GB"
+            except Exception:
+                pass
+            devices.append({
+                "id": f"cuda:{i}",
+                "type": "cuda",
+                "name": torch.cuda.get_device_name(i),
+                "model": torch.cuda.get_device_name(i),
+                "index": i,
+                "memory": memory,
+                "recommended": i == 0,
+                "description": "GPU 加速训练，适合完整训练任务。",
+            })
+    devices.append({
+        "id": "cpu",
+        "type": "cpu",
+        "name": "CPU",
+        "model": cpu_model,
+        "index": -1,
+        "recommended": not torch.cuda.is_available(),
+        "description": "兼容性最好，但完整训练耗时较长。",
+    })
     return {"code": 200, "data": devices}
 
 
+TRAINING_PROCESS = None
 TRAINING_STATUS = {"status": "idle", "logs": [], "epoch": 0, "totalEpochs": 20, "loss": 0, "acc": 0, "progress": 0}
 
 @app.post("/api/admin/model/train")
 def admin_model_train(_: None = Depends(_require_admin), payload: dict = Body(...)):
     """启动训练（后台子进程）。"""
+    import ast
     import subprocess, threading
+    global TRAINING_PROCESS
     if TRAINING_STATUS["status"] == "running":
         return JSONResponse(status_code=400, content={"code": 400, "message": "训练已在运行中"})
-    TRAINING_STATUS.update(status="running", logs=[], epoch=0, progress=0, loss=0, acc=0)
-    def run():
+    epochs = max(1, min(int(payload.get("epochs", 20) or 20), 100))
+    batch_size = max(1, min(int(payload.get("batchSize", 16) or 16), 128))
+    lr = float(payload.get("lr", 0.0003) or 0.0003)
+    device_id = payload.get("device", "auto") or "auto"
+    device_arg = "cpu" if device_id == "cpu" else "cuda" if str(device_id).startswith("cuda") else "auto"
+    include_contributed = bool(payload.get("includeContributed", True))
+    contributed_status = payload.get("contributedStatus", "approved") or "approved"
+    env = os.environ.copy()
+    if str(device_id).startswith("cuda") and ":" in str(device_id):
+        env["CUDA_VISIBLE_DEVICES"] = str(device_id).split(":", 1)[1]
+    TRAINING_STATUS.update(
+        status="running",
+        logs=[],
+        epoch=0,
+        totalEpochs=epochs,
+        progress=0,
+        loss=0,
+        acc=0,
+        includeContributed=include_contributed,
+        contributedStatus=contributed_status,
+    )
+    def update_from_line(line: str):
+        if not line.startswith("{") or "epoch" not in line:
+            return
         try:
-            proc = subprocess.Popen(
-                ["python", str(MODEL_DATA_DIR.parent / "train.py")],
+            record = ast.literal_eval(line)
+        except Exception:
+            return
+        if not isinstance(record, dict):
+            return
+        TRAINING_STATUS["epoch"] = int(record.get("epoch", 0) or 0)
+        TRAINING_STATUS["loss"] = float(record.get("val_loss", record.get("train_loss", 0)) or 0)
+        TRAINING_STATUS["acc"] = float(record.get("val_acc", record.get("train_acc", 0)) or 0)
+        TRAINING_STATUS["progress"] = round(TRAINING_STATUS["epoch"] / max(1, epochs) * 100, 1)
+
+    def run():
+        global TRAINING_PROCESS
+        try:
+            cmd = [
+                "python",
+                str(MODEL_DATA_DIR.parent / "train.py"),
+                "--epochs", str(epochs),
+                "--batch-size", str(batch_size),
+                "--lr", str(lr),
+                "--device", device_arg,
+            ]
+            if include_contributed:
+                cmd.extend(["--include-contributed", "--contributed-status", contributed_status])
+            TRAINING_PROCESS = subprocess.Popen(
+                cmd,
                 cwd=str(MODEL_DATA_DIR.parent),
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                text=True, encoding="utf-8", errors="replace",
+                text=True, encoding="utf-8", errors="replace", env=env,
             )
-            for line in proc.stdout:
-                TRAINING_STATUS["logs"].append(line.strip())
+            for line in TRAINING_PROCESS.stdout:
+                clean = line.strip()
+                TRAINING_STATUS["logs"].append(clean)
+                update_from_line(clean)
                 if len(TRAINING_STATUS["logs"]) > 200:
                     TRAINING_STATUS["logs"] = TRAINING_STATUS["logs"][-200:]
-            proc.wait()
-            TRAINING_STATUS["status"] = "done"
+            code = TRAINING_PROCESS.wait()
+            if TRAINING_STATUS["status"] == "cancelled":
+                TRAINING_STATUS["logs"].append("Training cancelled.")
+            elif code == 0:
+                TRAINING_STATUS["status"] = "done"
+                TRAINING_STATUS["progress"] = 100
+            else:
+                TRAINING_STATUS["status"] = "error"
+                TRAINING_STATUS["logs"].append(f"Training process exited with code {code}.")
         except Exception as e:
             TRAINING_STATUS["status"] = "error"
             TRAINING_STATUS["logs"].append(str(e))
+        finally:
+            TRAINING_PROCESS = None
     threading.Thread(target=run, daemon=True).start()
     return {"code": 200, "message": "训练已启动"}
 
@@ -573,7 +675,12 @@ def admin_model_training_status(_: None = Depends(_require_admin)):
 @app.post("/api/admin/model/training/cancel")
 def admin_model_training_cancel(_: None = Depends(_require_admin)):
     """取消训练。"""
-    TRAINING_STATUS["status"] = "idle"
+    global TRAINING_PROCESS
+    if TRAINING_PROCESS and TRAINING_PROCESS.poll() is None:
+        TRAINING_STATUS["status"] = "cancelled"
+        TRAINING_PROCESS.terminate()
+    else:
+        TRAINING_STATUS["status"] = "idle"
     return {"code": 200, "message": "训练已取消"}
 
 

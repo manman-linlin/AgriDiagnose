@@ -1,3 +1,5 @@
+import argparse
+import os
 from pathlib import Path
 
 import torch
@@ -54,12 +56,50 @@ def evaluate(model, loader, criterion, device, num_classes):
     return avg_loss, overall_acc, per_cls
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--epochs", type=int, default=None)
+    parser.add_argument("--batch-size", type=int, default=None)
+    parser.add_argument("--lr", type=float, default=None)
+    parser.add_argument("--device", default=None, choices=["auto", "cpu", "cuda"])
+    parser.add_argument("--include-contributed", action="store_true")
+    parser.add_argument("--contributed-status", default="approved", choices=["approved", "pending", "rejected", "all"])
+    return parser.parse_args()
+
+
 def train():
+    args = parse_args()
     cfg = TrainConfig()
+    if args.epochs:
+        cfg.epochs = args.epochs
+    if args.batch_size:
+        cfg.batch_size = args.batch_size
+    if args.lr:
+        cfg.learning_rate = args.lr
     set_seed(cfg.seed)
     ensure_dir(cfg.output_dir)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device_pref = (args.device or os.getenv("AGRIDIAG_TRAIN_DEVICE") or "auto").lower()
+    if device_pref == "cpu":
+        device = torch.device("cpu")
+    elif device_pref == "cuda":
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(
+        {
+            "event": "train_config",
+            "model": cfg.model_name,
+            "device": str(device),
+            "epochs": cfg.epochs,
+            "batch_size": cfg.batch_size,
+            "learning_rate": cfg.learning_rate,
+            "image_size": cfg.image_size,
+            "include_contributed": args.include_contributed,
+            "contributed_status": args.contributed_status,
+        },
+        flush=True,
+    )
     train_loader, val_loader, classes = build_dataloaders(
         data_root=cfg.data_root,
         image_size=cfg.image_size,
@@ -67,6 +107,8 @@ def train():
         val_ratio=cfg.val_ratio,
         num_workers=cfg.num_workers,
         seed=cfg.seed,
+        include_contributed=args.include_contributed,
+        contributed_status=args.contributed_status,
     )
 
     # 加载中英文对照
@@ -183,4 +225,3 @@ def train():
 
 if __name__ == "__main__":
     train()
-

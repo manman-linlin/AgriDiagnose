@@ -4,7 +4,7 @@
  */
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-import App from './App.js';
+import App from './App.js?v=model-admin-20260723-3';
 
 const app = createApp(App);
 

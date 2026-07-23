@@ -29,12 +29,20 @@ export async function request(method, path, body, skipAuth = false) {
   const res = await fetch(path, config);
   const data = await res.json();
 
-  if (data.code === 401) {
+  // FastAPI HTTPException 返回 { detail: "..." } 不带 code 字段，
+  // 需要综合 HTTP 状态码 + data.code + data.detail 来判断 401/403。
+  const isUnauthorized = res.status === 401
+    || res.status === 403
+    || data.code === 401
+    || data.code === 403;
+
+  if (isUnauthorized) {
     notifyUnauthorized();
+    throw new Error(data.detail || data.message || '请先登录');
   }
 
   if (data.code !== 200) {
-    throw new Error(data.message || '请求失败');
+    throw new Error(data.detail || data.message || '请求失败');
   }
   return data.data;
 }

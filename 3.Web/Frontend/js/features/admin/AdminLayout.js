@@ -13,7 +13,7 @@ import AppLoading from '../../shared/components/AppLoading.js';
 /* 子页面组件 */
 import DashboardPage from './dashboard/page.js';
 import ReviewPage from './review/page.js';
-import ModelPage from './model/page.js';
+import ModelPage from './model/page.js?v=model-admin-20260723-3';
 import SettingsPage from './settings/page.js';
 import EncyclopediaPage from './encyclopedia/page.js';
 import UsersPage from './users/page.js';
@@ -29,13 +29,20 @@ const SUB_PAGES = {
   logs:         LogsPage,
 };
 
+function getSubFromHash() {
+  const hash = (location.hash || '').replace(/^#\/?/, '');
+  if (!hash.startsWith('admin/')) return 'dashboard';
+  const key = hash.slice(6);
+  return ADMIN_PAGES[key] ? key : 'dashboard';
+}
+
 export default {
   name: 'AdminLayout',
   components: { AppIcon, AppLoading },
   setup() {
     const admin = useAdminStore();
     const ui = useUiStore();
-    const subPage = ref('dashboard');
+    const subPage = ref(getSubFromHash());
     const sidebarOpen = ref(false);
     const pendingCount = ref(0);
     const showNotifications = ref(false);
@@ -59,12 +66,9 @@ export default {
     }
 
     function syncFromHash() {
-      const hash = (location.hash || '').replace(/^#\/?/, '');
-      if (hash.startsWith('admin/')) {
-        const key = hash.slice(6);
-        if (ADMIN_PAGES[key] && subPage.value !== key) {
-          subPage.value = key;
-        }
+      const key = getSubFromHash();
+      if (subPage.value !== key) {
+        subPage.value = key;
       }
     }
 

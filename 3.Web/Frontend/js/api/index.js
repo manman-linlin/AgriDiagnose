@@ -102,6 +102,9 @@ export function adminDashboardDistribution() {
 export function adminModelInfo() {
   return request('GET', '/api/admin/model/info');
 }
+export function adminModelClasses() {
+  return request('GET', '/api/admin/model/classes');
+}
 export function adminModelDevices() {
   return request('GET', '/api/admin/model/devices');
 }
