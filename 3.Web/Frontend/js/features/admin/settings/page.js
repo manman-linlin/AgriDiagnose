@@ -94,6 +94,7 @@ export default {
         const data = await adminConfigLlmTest(p.id, {
           api_key: apiKeyInput.value.trim() || undefined,
           base_url: isCustom.value ? baseUrlInput.value.trim() : undefined,
+          model: modelInput.value.trim() || undefined,
         });
         ui.showToast(data.ok ? '连接成功' : `连接失败：${data.error || ('HTTP ' + data.status)}`, data.ok ? 'success' : 'error');
       } catch (e) {

@@ -831,7 +831,12 @@ def admin_config_set_active(provider_id: str, _: None = Depends(_require_admin))
 
 @app.post("/api/admin/config/llm/test")
 def admin_config_llm_test(_: None = Depends(_require_admin), payload: dict = Body(...)):
-    """测试 LLM 连接：优先用请求里传的未保存值，没传则用已保存的值。"""
+    """测试 LLM 连接：优先用请求里传的未保存值，没传则用已保存的值。
+
+    真正发起一次最小化的 chat/completions 调用（而不是只探测 /models），
+    这样填错的模型名（服务商下根本不存在）也能在这里被测出来，
+    而不是要等到用户在诊断/对话页面真正使用时才报错。
+    """
     import requests as req
     provider_id = payload.get("provider_id", "")
     cfg = _load_config()
@@ -840,14 +845,37 @@ def admin_config_llm_test(_: None = Depends(_require_admin), payload: dict = Bod
         return JSONResponse(status_code=404, content={"code": 404, "message": "未找到该服务商"})
     api_key = (payload.get("api_key") or provider.get("api_key") or "").strip()
     base_url = (payload.get("base_url") or provider.get("base_url") or "").strip().rstrip("/")
+    model = (payload.get("model") or provider.get("default_model") or "").strip()
     if not api_key or not base_url:
         return JSONResponse(status_code=400, content={"code": 400, "message": "请先填写 API Key 和接口地址"})
+    if not model:
+        return JSONResponse(status_code=400, content={"code": 400, "message": "请先填写模型名称"})
+
+    chat_url = base_url if base_url.endswith("/chat/completions") else base_url + "/chat/completions"
     try:
-        resp = req.get(base_url + "/models", headers={"Authorization": f"Bearer {api_key}"}, timeout=10)
-        ok = resp.status_code == 200
-        return {"code": 200, "data": {"ok": ok, "status": resp.status_code}}
+        resp = req.post(
+            chat_url,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": "ping"}],
+                "max_tokens": 1,
+            },
+            timeout=15,
+        )
     except Exception as e:
         return {"code": 200, "data": {"ok": False, "error": str(e)}}
+
+    if resp.status_code == 200:
+        return {"code": 200, "data": {"ok": True, "status": 200, "model": model}}
+
+    # 尽量把服务商返回的具体错误信息（如"模型不存在"）透出给管理员，而不是只给状态码
+    try:
+        err_body = resp.json()
+        err_msg = (err_body.get("error") or {}).get("message") or err_body.get("message") or resp.text[:200]
+    except Exception:
+        err_msg = resp.text[:200]
+    return {"code": 200, "data": {"ok": False, "status": resp.status_code, "error": err_msg}}
 
 
 @app.get("/api/admin/config/system")

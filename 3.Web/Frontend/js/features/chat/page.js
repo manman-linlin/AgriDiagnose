@@ -85,7 +85,7 @@ export default {
         return {
           level: 'orange',
           text: `AI 判断可能是"${review.ai_diagnosis || '未知'}"，与模型结果不同`,
-          detail: `模型：${modelLabel}　AI：${review.ai_diagnosis || '未知'}（建议以 AI 判断为准）`,
+          detail: `模型：${modelLabel}（置信度 ${conf}%）　AI：${review.ai_diagnosis || '未知'}——两者存在分歧，请结合实际拍摄情况判断，必要时人工复核`,
           evidence: review.visual_evidence || [],
         };
       }
