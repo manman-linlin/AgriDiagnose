@@ -517,10 +517,11 @@ export default {
                 </td>
                 <td>
                   <template v-if="r.mode === 'extend'">
-                    <span class="disease-tag">{{ r.existing_class?.split('___')?.[1]?.replace(/_/g, ' ') || r.existing_class }}</span>
+                    <span class="disease-tag">{{ r.label_cn || r.disease_cn || r.existing_class?.split('___')?.[1]?.replace(/_/g, ' ') || r.existing_class }}</span>
+                    <div v-if="r.crop_cn" style="font-size:11px;color:var(--color-text-hint);">{{ r.crop_cn }}</div>
                   </template>
                   <template v-else>
-                    {{ r.crop_name }} — {{ r.disease_name }}
+                    {{ r.label_cn || (r.crop_name + ' — ' + r.disease_name) }}
                   </template>
                 </td>
                 <td>{{ r.image_count }} 张</td>

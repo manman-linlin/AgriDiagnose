@@ -198,18 +198,53 @@ class CollectorService:
             status: 可选，按审核状态筛选 ('pending' / 'approved' / 'rejected')
 
         返回:
-            贡献记录列表，按提交时间倒序
+            贡献记录列表，按提交时间倒序，每条记录附加：
+            - label_cn: 中文病害名
+            - crop_cn: 中文作物名
+            - disease_cn: 中文病害简称
+            - images: 完整 /model-data/ URL 数组
+            - thumbnail: 首张缩略图 URL
         """
         records = _load_index()
         if status and status in {s.value for s in ReviewStatus}:
             records = [r for r in records if r.get("status") == status]
-        # 补充 image_url 方便前端展示
+
+        # 加载中英文映射
+        cn_map = self._load_cn_map()
+
         for r in records:
-            paths = r.get("image_paths", [])
-            if paths:
-                r["thumbnail"] = f"/model-data/{paths[0]}"
+            # ── 补充中文名 ──
+            if r.get("mode") == ContributionMode.EXTEND and r.get("existing_class"):
+                cls_info = cn_map.get(r["existing_class"], {})
+                r["label_cn"] = cls_info.get("cn", r["existing_class"])
+                r["crop_cn"] = cls_info.get("crop", "")
+                r["disease_cn"] = cls_info.get("disease", "")
+            elif r.get("mode") == ContributionMode.NEW:
+                r["label_cn"] = f'{r.get("crop_name", "")} — {r.get("disease_name", "")}'
+                r["crop_cn"] = r.get("crop_name", "")
+                r["disease_cn"] = r.get("disease_name", "")
             else:
-                r["thumbnail"] = ""
+                r["label_cn"] = ""
+                r["crop_cn"] = ""
+                r["disease_cn"] = ""
+
+            # ── 补充 images 完整 URL 数组 ──
+            # 路径格式为 Data/contributed/.../，/model-data 已挂载 2.Model/Data/
+            # 所以 URL 中不需要前面的 Data/ 前缀
+            paths = r.get("image_paths", [])
+            url_paths = []
+            for p in paths:
+                normalized = p.replace("\\", "/")
+                if normalized.startswith("Data/"):
+                    normalized = normalized[len("Data/"):]
+                url_paths.append(f"/model-data/{normalized}")
+            r["images"] = url_paths if url_paths else []
+            r["thumbnail"] = r["images"][0] if r["images"] else ""
+
+            # ── 统一时间字段别名 ──
+            r["time"] = r.get("submit_time", "")
+            r["created_at"] = r.get("submit_time", "")
+
         return records
 
     # ── 审核 ────────────────────────────────────────
@@ -253,14 +288,35 @@ class CollectorService:
         approved_images = sum(
             r.get("image_count", 0) for r in records if r.get("status") == ReviewStatus.APPROVED
         )
+        rejected_images = sum(
+            r.get("image_count", 0) for r in records if r.get("status") == ReviewStatus.REJECTED
+        )
         return {
             "total_submissions": len(records),
             "total_images": total_images,
             "approved_images": approved_images,
+            "approved": sum(1 for r in records if r.get("status") == ReviewStatus.APPROVED),
+            "rejected": sum(1 for r in records if r.get("status") == ReviewStatus.REJECTED),
             "extend_count": sum(1 for r in records if r.get("mode") == ContributionMode.EXTEND),
             "new_count": sum(1 for r in records if r.get("mode") == ContributionMode.NEW),
             "pending_count": sum(1 for r in records if r.get("status") == ReviewStatus.PENDING),
         }
+
+    # ── 中文映射缓存 ────────────────────────────────
+    _cn_map_cache: Optional[dict] = None
+
+    @classmethod
+    def _load_cn_map(cls) -> dict:
+        """加载 class_labels.json，返回 {en: {cn, crop, disease}} 映射。"""
+        if cls._cn_map_cache is not None:
+            return cls._cn_map_cache
+        if not LABELS_PATH.exists():
+            cls._cn_map_cache = {}
+            return {}
+        with LABELS_PATH.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        cls._cn_map_cache = {item["en"]: item for item in data}
+        return cls._cn_map_cache
 
     # ── 获取已有类别列表 ─────────────────────────────
     @staticmethod

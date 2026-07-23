@@ -6,7 +6,7 @@ import AppIcon from '../../../shared/components/AppIcon.js';
 import AppLoading from '../../../shared/components/AppLoading.js';
 import AppEmpty from '../../../shared/components/AppEmpty.js';
 
-/** 中英文映射（从 class_labels.json 构建） */
+/** 中英文映射（仅用于百科跳转） */
 let CLASS_MAP = {};
 
 async function loadClassMap() {
@@ -18,13 +18,22 @@ async function loadClassMap() {
   } catch { /* 静默降级 */ }
 }
 
-/** 获取中文显示名 */
-function cnName(item) {
+/** 获取显示用中文名（后端 list_contributions 已返回 label_cn） */
+function displayName(item) {
+  return item.label_cn || item.cn || cnNameFallback(item);
+}
+function cnNameFallback(item) {
   if (item.mode === 'new' || item.crop_name) {
     return (item.crop_name || '') + ' — ' + (item.disease_name || '');
   }
   const cls = CLASS_MAP[item.existing_class];
   return cls ? cls.cn + '（' + cls.crop + ' · ' + cls.disease + '）' : (item.existing_class || '未知病害');
+}
+
+/** 扩展模式下获取完整信息文本（中文名 + 作物） */
+function extendedInfo(item) {
+  if (item.mode === 'new') return (item.crop_name || '') + ' — ' + (item.disease_name || '');
+  return (item.label_cn || item.cn || '') + (item.crop_cn ? ' （' + item.crop_cn + '）' : '');
 }
 
 export default {
@@ -217,7 +226,7 @@ export default {
       toggleSelect, selectAll, invertSelection, clearSelection, approve, reject, undo, batchApprove, batchReject,
       openLightbox, closeLightbox, prevImage, nextImage,
       showHoverPreview, hideHoverPreview, openEncyclopedia,
-      statusLabel, statusClass, cnName, CLASS_MAP,
+      statusLabel, statusClass, displayName, CLASS_MAP,
     };
   },
   template: `
@@ -292,12 +301,12 @@ export default {
             <input type="checkbox" :checked="selected.has(item.id)" @change="toggleSelect(item.id)" style="margin-top:4px;" />
             <div style="flex:1;min-width:0;">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                <span style="font-size:13px;color:var(--color-text-hint);">{{ item.time || item.created_at || '-' }}</span>
+                <span style="font-size:13px;color:var(--color-text-hint);">{{ item.submit_time || item.time || item.created_at || '-' }}</span>
                 <span class="tag tag-sm" :class="statusClass(item.status)">{{ statusLabel(item.status) }}</span>
                 <span class="tag tag-sm tag-crop">{{ item.mode === 'new' ? '新增' : '扩展' }}</span>
               </div>
               <div style="font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px;">
-                <span>{{ cnName(item) }}</span>
+                <span>{{ displayName(item) }}</span>
                 <button v-if="item.mode==='extend' && item.existing_class"
                   class="btn btn-sm btn-outline" style="font-size:11px;padding:0 8px;min-height:24px;"
                   @click="openEncyclopedia(item.existing_class)" title="查看百科词条">
