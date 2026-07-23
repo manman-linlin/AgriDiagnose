@@ -178,6 +178,14 @@
   .action-cards { flex-direction: column; }
 
   .drawer { width: 100%; max-width: 100%; }
+  .admin-encyclopedia-actions { width: 100%; }
+  .admin-encyclopedia-toolbar .form-select { width: 100%; }
+  .admin-encyclopedia-grid { grid-template-columns: 1fr; }
+  .admin-encyclopedia-card { align-items: stretch; }
+  .form-grid { grid-template-columns: 1fr; }
+  .source-editor { grid-template-columns: 1fr auto; }
+  .source-editor .source-url { grid-column: 1 / -1; }
+  .encyclopedia-form-dialog { width: calc(100vw - 20px); max-height: 94vh; }
 
   .history-item { flex-wrap: wrap; }
   .history-score { margin-left: auto; }

@@ -19,7 +19,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Venturia inaequalis。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片出现橄榄绿色至黑色病斑，严重时叶片脱落。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "apple_black_rot",
@@ -41,7 +53,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Botryosphaeria obtusa。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：果实出现褐色腐烂斑并逐渐变黑，叶片有紫色斑点。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "apple_cedar_apple_rust",
@@ -63,7 +87,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Gymnosporangium juniperi-virginianae。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片正面出现橙黄色斑点，背面形成毛状物。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "cherry_powdery_mildew",
@@ -85,7 +121,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Podosphaera clandestina。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片表面覆盖白色粉状物，影响光合作用。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "corn_cercospora_leaf_spot",
@@ -107,7 +155,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Cercospora zeae-maydis。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片出现灰色矩形病斑，严重时整叶枯死。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "corn_common_rust",
@@ -129,7 +189,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Puccinia sorghi。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片出现铁锈色粉状小突起，影响生长。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "corn_northern_leaf_blight",
@@ -151,7 +223,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Exserohilum turcicum。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片出现灰绿色至褐色大型梭形病斑。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "grape_black_rot",
@@ -173,7 +257,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Guignardia bidwellii。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：果粒变褐变黑并干缩，叶片有褐色病斑。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "grape_esca",
@@ -195,7 +291,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Phaeomoniella chlamydospora and associated wood-decay fungi。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片出现虎斑状褪绿，维管束变褐坏死。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "grape_leaf_blight",
@@ -217,7 +325,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Pseudocercospora vitis。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片边缘焦枯，逐渐向内部扩展。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "orange_haunglongbing",
@@ -238,7 +358,19 @@
     ],
     "treatment": [
       "目前无有效治愈手段，以预防和阻断传播为主"
-    ]
+    ],
+    "pathogen": "主要由植物病原细菌引起，常见相关病原为：Candidatus Liberibacter spp.。",
+    "epidemiology": "带菌种苗、病残体和田间伤口可成为侵染来源，温暖多雨、喷灌飞溅及农事操作有利于传播。应重点监测新叶和有伤口的组织。",
+    "differentiation": "重点观察：叶片斑驳黄化、变小变硬，果实畸形，是柑橘毁灭性病害。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "peach_bacterial_spot",
@@ -260,7 +392,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由植物病原细菌引起，常见相关病原为：Xanthomonas arboricola pv. pruni。",
+    "epidemiology": "带菌种苗、病残体和田间伤口可成为侵染来源，温暖多雨、喷灌飞溅及农事操作有利于传播。应重点监测新叶和有伤口的组织。",
+    "differentiation": "重点观察：叶片出现水渍状小斑点，严重时穿孔脱落。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "pepper_bell_bacterial_spot",
@@ -282,7 +426,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由植物病原细菌引起，常见相关病原为：Xanthomonas spp.。",
+    "epidemiology": "带菌种苗、病残体和田间伤口可成为侵染来源，温暖多雨、喷灌飞溅及农事操作有利于传播。应重点监测新叶和有伤口的组织。",
+    "differentiation": "重点观察：叶片和果实出现褐色水渍状斑点。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "potato_early_blight",
@@ -304,7 +460,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Alternaria solani。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片出现褐色同心轮纹病斑。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "potato_late_blight",
@@ -326,7 +494,19 @@
     "treatment": [
       "发病初期使用针对性药剂并扩大防治范围",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Phytophthora infestans。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片出现水渍状斑块，湿度大时有白色霉层，是马铃薯毁灭性病害。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "squash_powdery_mildew",
@@ -348,7 +528,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Podosphaera xanthii。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片表面覆盖白色粉状物质，严重时叶片枯黄。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "strawberry_leaf_scorch",
@@ -370,7 +562,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Diplocarpon earlianum。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片边缘出现紫褐色坏死斑，逐渐向内扩展。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "tomato_early_blight",
@@ -392,7 +596,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Alternaria solani。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片出现褐色圆形病斑，有同心轮纹，边缘清晰。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "tomato_late_blight",
@@ -414,7 +630,19 @@
     "treatment": [
       "发病初期使用针对性药剂并扩大防治范围",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Phytophthora infestans。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片出现水渍状斑块并迅速扩大，湿度大时有白色霉层。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "tomato_leaf_mold",
@@ -436,7 +664,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Passalora fulva。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片背面出现黄绿色霉斑，正面出现褪绿斑块。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "tomato_septoria_leaf_spot",
@@ -458,7 +698,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Septoria lycopersici。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片出现小圆形灰色病斑，中央灰白色边缘深褐色。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "tomato_spider_mites",
@@ -480,7 +732,19 @@
     "treatment": [
       "发病初期使用针对性杀螨剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由害虫或害螨取食、吸汁造成，常见相关病原为：Tetranychus urticae。",
+    "epidemiology": "高温干燥条件下部分害螨繁殖较快，可由杂草、种苗或邻近受害植株扩散。应检查叶背、叶柄和生长点。",
+    "differentiation": "重点观察：叶片出现黄白色斑点，叶背有红色螨虫和蛛丝。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "tomato_target_spot",
@@ -502,7 +766,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由真菌或卵菌类病原引起，常见相关病原为：Corynespora cassiicola。",
+    "epidemiology": "病原多在病残体、种苗或多年生组织中存活，叶面长时间湿润、田间郁闭和降雨飞溅通常会增加发病风险。实际高发温度需结合当地品种和气象条件判断。",
+    "differentiation": "重点观察：叶片出现同心环状褐色病斑，似靶心状。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "tomato_tomato_yellow_leaf_curl_virus",
@@ -523,7 +799,19 @@
     ],
     "treatment": [
       "目前无有效治愈手段，以防治媒介昆虫为主"
-    ]
+    ],
+    "pathogen": "主要由植物病毒引起，常见相关病原为：Tomato yellow leaf curl virus (TYLCV)。",
+    "epidemiology": "病毒可随带毒种苗、汁液接触或传毒昆虫扩散，具体途径取决于病毒种类。媒介昆虫活跃期和频繁整枝操作期应加强监测。",
+    "differentiation": "重点观察：植株矮化，叶片黄化卷曲变小，由烟粉虱传播。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "tomato_tomato_mosaic_virus",
@@ -544,7 +832,19 @@
     ],
     "treatment": [
       "目前无有效治愈手段，以预防为主"
-    ]
+    ],
+    "pathogen": "主要由植物病毒引起，常见相关病原为：Tomato mosaic virus (ToMV)。",
+    "epidemiology": "病毒可随带毒种苗、汁液接触或传毒昆虫扩散，具体途径取决于病毒种类。媒介昆虫活跃期和频繁整枝操作期应加强监测。",
+    "differentiation": "重点观察：叶片出现黄绿相间花叶斑驳，植株生长迟缓。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "tomato_bacterial_spot",
@@ -566,7 +866,19 @@
     "treatment": [
       "发病初期使用针对性药剂",
       "注意安全间隔期"
-    ]
+    ],
+    "pathogen": "主要由植物病原细菌引起，常见相关病原为：Xanthomonas spp.。",
+    "epidemiology": "带菌种苗、病残体和田间伤口可成为侵染来源，温暖多雨、喷灌飞溅及农事操作有利于传播。应重点监测新叶和有伤口的组织。",
+    "differentiation": "重点观察：叶片和果实出现褐色水渍状小斑点。还应结合病斑发生部位、扩展速度、叶背特征及是否可见虫体，与药害、缺素和相似病害区分；必要时进行病原检测。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "apple_healthy",
@@ -590,7 +902,19 @@
     "treatment": [
       "当前未见明显病害特征，不建议预防性滥用农药",
       "若后续出现病斑或生长异常，建议重新拍照并请农技人员复核"
-    ]
+    ],
+    "pathogen": "当前图像未见模型已知类别的明确病原或虫害特征。",
+    "epidemiology": "健康状态不具有发病规律。建议保持适宜水肥、光照和通风，并持续观察新叶、叶背和生长点。",
+    "differentiation": "叶片颜色和形态应总体均匀，不应有持续扩展的斑点、黄化、卷曲或虫体。“健康”预测不能排除未知病害、早期感染或拍摄质量影响。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "blueberry_healthy",
@@ -614,7 +938,19 @@
     "treatment": [
       "当前未见明显病害特征，不建议预防性滥用农药",
       "若后续出现病斑或生长异常，建议重新拍照并请农技人员复核"
-    ]
+    ],
+    "pathogen": "当前图像未见模型已知类别的明确病原或虫害特征。",
+    "epidemiology": "健康状态不具有发病规律。建议保持适宜水肥、光照和通风，并持续观察新叶、叶背和生长点。",
+    "differentiation": "叶片颜色和形态应总体均匀，不应有持续扩展的斑点、黄化、卷曲或虫体。“健康”预测不能排除未知病害、早期感染或拍摄质量影响。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "cherry_healthy",
@@ -638,7 +974,19 @@
     "treatment": [
       "当前未见明显病害特征，不建议预防性滥用农药",
       "若后续出现病斑或生长异常，建议重新拍照并请农技人员复核"
-    ]
+    ],
+    "pathogen": "当前图像未见模型已知类别的明确病原或虫害特征。",
+    "epidemiology": "健康状态不具有发病规律。建议保持适宜水肥、光照和通风，并持续观察新叶、叶背和生长点。",
+    "differentiation": "叶片颜色和形态应总体均匀，不应有持续扩展的斑点、黄化、卷曲或虫体。“健康”预测不能排除未知病害、早期感染或拍摄质量影响。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "corn_healthy",
@@ -662,7 +1010,19 @@
     "treatment": [
       "当前未见明显病害特征，不建议预防性滥用农药",
       "若后续出现病斑或生长异常，建议重新拍照并请农技人员复核"
-    ]
+    ],
+    "pathogen": "当前图像未见模型已知类别的明确病原或虫害特征。",
+    "epidemiology": "健康状态不具有发病规律。建议保持适宜水肥、光照和通风，并持续观察新叶、叶背和生长点。",
+    "differentiation": "叶片颜色和形态应总体均匀，不应有持续扩展的斑点、黄化、卷曲或虫体。“健康”预测不能排除未知病害、早期感染或拍摄质量影响。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "grape_healthy",
@@ -686,7 +1046,19 @@
     "treatment": [
       "当前未见明显病害特征，不建议预防性滥用农药",
       "若后续出现病斑或生长异常，建议重新拍照并请农技人员复核"
-    ]
+    ],
+    "pathogen": "当前图像未见模型已知类别的明确病原或虫害特征。",
+    "epidemiology": "健康状态不具有发病规律。建议保持适宜水肥、光照和通风，并持续观察新叶、叶背和生长点。",
+    "differentiation": "叶片颜色和形态应总体均匀，不应有持续扩展的斑点、黄化、卷曲或虫体。“健康”预测不能排除未知病害、早期感染或拍摄质量影响。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "peach_healthy",
@@ -710,7 +1082,19 @@
     "treatment": [
       "当前未见明显病害特征，不建议预防性滥用农药",
       "若后续出现病斑或生长异常，建议重新拍照并请农技人员复核"
-    ]
+    ],
+    "pathogen": "当前图像未见模型已知类别的明确病原或虫害特征。",
+    "epidemiology": "健康状态不具有发病规律。建议保持适宜水肥、光照和通风，并持续观察新叶、叶背和生长点。",
+    "differentiation": "叶片颜色和形态应总体均匀，不应有持续扩展的斑点、黄化、卷曲或虫体。“健康”预测不能排除未知病害、早期感染或拍摄质量影响。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "bell_pepper_healthy",
@@ -734,7 +1118,19 @@
     "treatment": [
       "当前未见明显病害特征，不建议预防性滥用农药",
       "若后续出现病斑或生长异常，建议重新拍照并请农技人员复核"
-    ]
+    ],
+    "pathogen": "当前图像未见模型已知类别的明确病原或虫害特征。",
+    "epidemiology": "健康状态不具有发病规律。建议保持适宜水肥、光照和通风，并持续观察新叶、叶背和生长点。",
+    "differentiation": "叶片颜色和形态应总体均匀，不应有持续扩展的斑点、黄化、卷曲或虫体。“健康”预测不能排除未知病害、早期感染或拍摄质量影响。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "potato_healthy",
@@ -758,7 +1154,19 @@
     "treatment": [
       "当前未见明显病害特征，不建议预防性滥用农药",
       "若后续出现病斑或生长异常，建议重新拍照并请农技人员复核"
-    ]
+    ],
+    "pathogen": "当前图像未见模型已知类别的明确病原或虫害特征。",
+    "epidemiology": "健康状态不具有发病规律。建议保持适宜水肥、光照和通风，并持续观察新叶、叶背和生长点。",
+    "differentiation": "叶片颜色和形态应总体均匀，不应有持续扩展的斑点、黄化、卷曲或虫体。“健康”预测不能排除未知病害、早期感染或拍摄质量影响。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "raspberry_healthy",
@@ -782,7 +1190,19 @@
     "treatment": [
       "当前未见明显病害特征，不建议预防性滥用农药",
       "若后续出现病斑或生长异常，建议重新拍照并请农技人员复核"
-    ]
+    ],
+    "pathogen": "当前图像未见模型已知类别的明确病原或虫害特征。",
+    "epidemiology": "健康状态不具有发病规律。建议保持适宜水肥、光照和通风，并持续观察新叶、叶背和生长点。",
+    "differentiation": "叶片颜色和形态应总体均匀，不应有持续扩展的斑点、黄化、卷曲或虫体。“健康”预测不能排除未知病害、早期感染或拍摄质量影响。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "soybean_healthy",
@@ -806,7 +1226,19 @@
     "treatment": [
       "当前未见明显病害特征，不建议预防性滥用农药",
       "若后续出现病斑或生长异常，建议重新拍照并请农技人员复核"
-    ]
+    ],
+    "pathogen": "当前图像未见模型已知类别的明确病原或虫害特征。",
+    "epidemiology": "健康状态不具有发病规律。建议保持适宜水肥、光照和通风，并持续观察新叶、叶背和生长点。",
+    "differentiation": "叶片颜色和形态应总体均匀，不应有持续扩展的斑点、黄化、卷曲或虫体。“健康”预测不能排除未知病害、早期感染或拍摄质量影响。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "strawberry_healthy",
@@ -830,7 +1262,19 @@
     "treatment": [
       "当前未见明显病害特征，不建议预防性滥用农药",
       "若后续出现病斑或生长异常，建议重新拍照并请农技人员复核"
-    ]
+    ],
+    "pathogen": "当前图像未见模型已知类别的明确病原或虫害特征。",
+    "epidemiology": "健康状态不具有发病规律。建议保持适宜水肥、光照和通风，并持续观察新叶、叶背和生长点。",
+    "differentiation": "叶片颜色和形态应总体均匀，不应有持续扩展的斑点、黄化、卷曲或虫体。“健康”预测不能排除未知病害、早期感染或拍摄质量影响。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   },
   {
     "id": "tomato_healthy",
@@ -854,6 +1298,18 @@
     "treatment": [
       "当前未见明显病害特征，不建议预防性滥用农药",
       "若后续出现病斑或生长异常，建议重新拍照并请农技人员复核"
-    ]
+    ],
+    "pathogen": "当前图像未见模型已知类别的明确病原或虫害特征。",
+    "epidemiology": "健康状态不具有发病规律。建议保持适宜水肥、光照和通风，并持续观察新叶、叶背和生长点。",
+    "differentiation": "叶片颜色和形态应总体均匀，不应有持续扩展的斑点、黄化、卷曲或虫体。“健康”预测不能排除未知病害、早期感染或拍摄质量影响。",
+    "sources": [
+      {
+        "title": "PlantVillage 数据集类别说明与项目模型标签",
+        "organization": "AgriDiagnose 项目组",
+        "url": ""
+      }
+    ],
+    "updated_at": "2026-07-23",
+    "review_status": "基础资料"
   }
 ]

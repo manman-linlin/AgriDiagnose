@@ -144,6 +144,23 @@ export default {
       return BG_COLORS[hash % BG_COLORS.length];
     }
 
+    function imageSourceLabel(d) {
+      const source = String(d?.image_source || d?.image_type || '').toLowerCase();
+      if (source.includes('upload') || d?.image_uploaded) return '管理员上传图片';
+      if (source.includes('dataset') || source.includes('sample') || d?.dataset_image) return '模型数据集样例';
+      return '百科示例图片';
+    }
+    function textOrFallback(value, fallback) {
+      const text = Array.isArray(value) ? value.filter(Boolean).join('?') : String(value || '').trim();
+      if (!text || /^\?+$/.test(text) || text.includes('�')) return fallback;
+      return text;
+    }
+    function validSources(sources) {
+      return (sources || []).filter(source => {
+        const text = `${source?.title || ''}${source?.organization || ''}`.trim();
+        return text && !/^\?+$/.test(text) && !text.includes('�');
+      });
+    }
     function resetFilters() {
       searchQuery.value = '';
       selectedCrop.value = '';
@@ -161,7 +178,7 @@ export default {
       crops, categories, diseases, loading, error, filteredDiseases, paginatedDiseases,
       currentPage, totalPages, pageNumbers, highRiskCount,
       selectCrop, selectCategory, openDetail, closeDetail, goDiagnose, goChat, goToPage,
-      riskClass, riskLabel, getBgColor, resetFilters, loadDiseases,
+      riskClass, riskLabel, getBgColor, imageSourceLabel, textOrFallback, validSources, resetFilters, loadDiseases,
     };
   },
   template: `
@@ -175,7 +192,7 @@ export default {
       <div class="stats-mini-row" v-if="!loading && !error">
         <div class="stats-mini-card stagger-item" :style="{ '--i': 0 }">
           <div class="stats-mini-num">{{ diseases.length }}</div>
-          <div class="stats-mini-label">收录病害</div>
+          <div class="stats-mini-label">百科词条</div>
         </div>
         <div class="stats-mini-card stagger-item" :style="{ '--i': 1 }">
           <div class="stats-mini-num">{{ crops.length }}</div>
@@ -183,7 +200,7 @@ export default {
         </div>
         <div class="stats-mini-card stagger-item" :style="{ '--i': 2 }">
           <div class="stats-mini-num" style="color:var(--color-error);">{{ highRiskCount }}</div>
-          <div class="stats-mini-label">高风险病害</div>
+          <div class="stats-mini-label">高风险词条</div>
         </div>
       </div>
 
@@ -281,9 +298,9 @@ export default {
           <app-empty
             v-if="!loading && filteredDiseases.length === 0"
             icon="search"
-            title="未找到相关病害"
+            title="未找到相关词条"
             description="试试其他关键词或浏览全部"
-            action-label="查看全部病害"
+            action-label="查看全部词条"
             @action="resetFilters"
           ></app-empty>
         </div>
@@ -303,7 +320,7 @@ export default {
 
           <div v-if="drawDisease.image_url" class="encyclopedia-detail-image">
             <img :src="drawDisease.image_url" :alt="drawDisease.name_cn + '示例图'" />
-            <span>现有测试集示例图片</span>
+            <span>{{ imageSourceLabel(drawDisease) }}</span>
           </div>
 
           <div style="display:flex;gap:6px;margin-bottom:20px;">
@@ -322,14 +339,18 @@ export default {
             </div>
           </div>
 
-          <!-- 发病规律 -->
-          <div class="card" style="padding:18px;">
-            <div style="font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;"><app-icon name="thermometer" :size="15"></app-icon> 发病规律</div>
-            <div style="font-size:14px;color:#666;line-height:1.8;">
-              高发季节视作物和地区而定，温暖潮湿环境易流行。建议结合当地气象条件和历史发病情况进行综合研判。
-            </div>
+          <div class="card encyclopedia-detail-section">
+            <div class="detail-section-title"><app-icon name="thermometer" :size="15"></app-icon> 发病规律</div>
+            <div class="detail-section-text">{{ textOrFallback(drawDisease.epidemiology, '暂无专门记录。高发条件因作物和地区而异，建议结合当地气象与历史情况研判。') }}</div>
           </div>
-
+          <div class="card encyclopedia-detail-section">
+            <div class="detail-section-title"><app-icon name="bug" :size="15"></app-icon> 病原 / 诱因</div>
+            <div class="detail-section-text">{{ textOrFallback(drawDisease.pathogen, '暂无病原或诱因资料。') }}</div>
+          </div>
+          <div class="card encyclopedia-detail-section">
+            <div class="detail-section-title"><app-icon name="search" :size="15"></app-icon> 鉴别要点</div>
+            <div class="detail-section-text">{{ textOrFallback(drawDisease.differentiation, '暂无专门鉴别记录，建议结合典型症状并咨询农技人员。') }}</div>
+          </div>
           <!-- 防治方案 -->
           <div class="card" style="padding:18px;">
             <div style="font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;"><app-icon name="shield" :size="15"></app-icon> 防治方案</div>
@@ -344,6 +365,10 @@ export default {
             </div>
           </div>
 
+          <div v-if="validSources(drawDisease.sources).length" class="card encyclopedia-detail-section">
+            <div class="detail-section-title"><app-icon name="book-open" :size="15"></app-icon> 资料来源</div>
+            <ul class="encyclopedia-source-list"><li v-for="(source, i) in validSources(drawDisease.sources)" :key="i"><a v-if="source.url" :href="source.url" target="_blank" rel="noopener noreferrer">{{ source.title || source.url }}</a><span v-else>{{ source.title }}</span><small v-if="source.organization">{{ source.organization }}</small></li></ul>
+          </div>
           <!-- 快捷操作 -->
           <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
             <button class="btn btn-secondary" style="flex:1;min-width:140px;" @click="goDiagnose()">

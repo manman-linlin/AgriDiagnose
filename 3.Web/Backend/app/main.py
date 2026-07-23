@@ -13,11 +13,11 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import Body, Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import Body, Depends, FastAPI, File, Form, Header, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 from PIL import Image
 
 from app.services import agent_service, encyclopedia
@@ -307,6 +307,14 @@ def encyclopedia_crops():
         return JSONResponse(status_code=500, content={"code": 500, "message": f"获取失败: {str(e)}"})
 
 
+@app.get("/api/encyclopedia/categories")
+def encyclopedia_categories():
+    try:
+        return {"code": 200, "data": encyclopedia.list_categories()}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"code": 500, "message": f"Failed to load categories: {str(e)}"})
+
+
 @app.get("/api/encyclopedia/{disease_id}")
 def encyclopedia_detail(disease_id: str):
     """单个病害详情。"""
@@ -327,6 +335,126 @@ class AdminReviewRequest(BaseModel):
 
 
 # ── 管理员认证 ────────────────────────────────────────
+class EncyclopediaSourceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    title: str
+    organization: str = ""
+    url: str = ""
+
+    @field_validator("title")
+    @classmethod
+    def title_required(cls, value: str) -> str:
+        if not value:
+            raise ValueError("来源标题不能为空")
+        return value
+
+    @field_validator("url")
+    @classmethod
+    def valid_url(cls, value: str) -> str:
+        if value and not value.lower().startswith(("http://", "https://")):
+            raise ValueError("来源网址必须以 http:// 或 https:// 开头")
+        return value
+
+
+class EncyclopediaEntryRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    id: str | None = None
+    name_cn: str
+    name_en: str
+    crop_cn: str
+    category: str
+    risk_level: str
+    summary: str = Field(validation_alias=AliasChoices("summary", "symptom_summary"))
+    symptoms: list[str]
+    prevention: list[str] = []
+    treatment: list[str] = []
+    class_en: str | None = None
+    epidemiology: str | None = None
+    pathogen: str | None = None
+    differentiation: str | None = None
+    sources: list[EncyclopediaSourceRequest] = []
+    image_url: str | None = None
+    image_source: str | None = None
+
+    @field_validator("id", "name_cn", "name_en", "crop_cn", "summary")
+    @classmethod
+    def nonempty_string(cls, value):
+        if value is not None and not value.strip():
+            raise ValueError("字段不能为空")
+        return value
+
+    @field_validator("class_en", "epidemiology", "pathogen", "differentiation", "image_url", mode="before")
+    @classmethod
+    def clean_optional_string(cls, value):
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("字段必须是字符串")
+        return value.strip() or None
+
+    @field_validator("category")
+    @classmethod
+    def valid_category(cls, value):
+        if value not in encyclopedia.CATEGORIES:
+            raise ValueError("不支持的百科类别")
+        return value
+
+    @field_validator("risk_level")
+    @classmethod
+    def valid_risk(cls, value):
+        if value not in encyclopedia.RISK_LEVELS:
+            raise ValueError("不支持的风险等级")
+        return value
+
+    @field_validator("symptoms", "prevention", "treatment", mode="before")
+    @classmethod
+    def clean_string_array(cls, value):
+        if not isinstance(value, list):
+            raise ValueError("字段必须是字符串数组")
+        cleaned = []
+        for item in value:
+            if not isinstance(item, str):
+                raise ValueError("数组元素必须是字符串")
+            if item.strip():
+                cleaned.append(item.strip())
+        return cleaned
+
+    @model_validator(mode="after")
+    def symptoms_required(self):
+        if not self.symptoms:
+            raise ValueError("至少需要一条典型症状")
+        return self
+
+    def to_entry(self) -> dict:
+        entry = self.model_dump(exclude={"image_source"}, exclude_none=True)
+        if self.image_source in {"sample", "none"}:
+            entry.pop("image_url", None)
+        entry["symptom_summary"] = entry.pop("summary")
+        entry["sources"] = [source.model_dump() for source in self.sources]
+        entry["updated_at"] = datetime.now().strftime("%Y-%m-%d")
+        return entry
+
+
+class EncyclopediaBatchImportRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    entries: list[dict]
+    dry_run: bool = False
+    mode: str = "skip"
+
+    @field_validator("mode")
+    @classmethod
+    def valid_mode(cls, value):
+        if value not in {"skip", "update"}:
+            raise ValueError("mode must be skip or update")
+        return value
+
+    @model_validator(mode="after")
+    def nonempty_entries(self):
+        if not self.entries:
+            raise ValueError("entries must not be empty")
+        return self
+
+
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 ADMIN_TOKENS: set[str] = set()
 
@@ -906,79 +1034,126 @@ def admin_config_system_update(_: None = Depends(_require_admin), payload: dict 
     return {"code": 200, "message": "已保存"}
 
 
-# ── 百科管理 API ──────────────────────────────────────
-ENCYCLOPEDIA_FILE = BACKEND_DIR / "app" / "data" / "encyclopedia.json"
+# Encyclopedia management
+ENCYCLOPEDIA_IMAGE_DIR = MODEL_DATA_DIR / "encyclopedia_images"
+MAX_ENCYCLOPEDIA_IMAGE_BYTES = 5 * 1024 * 1024
+ALLOWED_ENCYCLOPEDIA_MIMES = {"image/jpeg", "image/png", "image/webp"}
+
+
+def _encyclopedia_error(exc: Exception):
+    if isinstance(exc, encyclopedia.EncyclopediaNotFoundError):
+        return JSONResponse(status_code=404, content={"code": 404, "message": "Image is empty"})
+    return JSONResponse(status_code=409, content={"code": 409, "message": str(exc)})
+
+
+def _delete_managed_encyclopedia_image(image_url: str | None) -> None:
+    if not image_url or not image_url.startswith(encyclopedia.MANAGED_IMAGE_URL_PREFIX):
+        return
+    filename = Path(image_url).name
+    if filename and filename == image_url.removeprefix(encyclopedia.MANAGED_IMAGE_URL_PREFIX):
+        (ENCYCLOPEDIA_IMAGE_DIR / filename).unlink(missing_ok=True)
+
+
+@app.get("/api/admin/encyclopedia")
+def admin_encyclopedia_list(q: str = "", crop: str = "", category: str = "", risk: str = "", page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100), _: None = Depends(_require_admin)):
+    entries = encyclopedia.list_diseases(crop=crop, category=category, keyword=q, risk=risk)
+    start = (page - 1) * page_size
+    return {"code": 200, "data": {"items": entries[start:start + page_size], "total": len(entries), "page": page, "page_size": page_size}}
+
+
+@app.get("/api/admin/encyclopedia/{disease_id}")
+def admin_encyclopedia_detail(disease_id: str, _: None = Depends(_require_admin)):
+    detail = encyclopedia.get_detail(disease_id)
+    if detail is None:
+        return JSONResponse(status_code=404, content={"code": 404, "message": "Image is empty"})
+    return {"code": 200, "data": detail}
+
 
 @app.post("/api/admin/encyclopedia")
-def admin_encyclopedia_create(_: None = Depends(_require_admin), payload: dict = Body(...)):
-    """新增百科词条。"""
-    import json as _json
-    diseases = []
-    if ENCYCLOPEDIA_FILE.exists():
-        with ENCYCLOPEDIA_FILE.open("r", encoding="utf-8") as f:
-            diseases = _json.load(f)
-    payload["id"] = payload.get("id") or uuid.uuid4().hex[:12]
-    diseases.insert(0, payload)
-    with ENCYCLOPEDIA_FILE.open("w", encoding="utf-8") as f:
-        _json.dump(diseases, f, ensure_ascii=False, indent=2)
-    return {"code": 200, "data": payload}
+def admin_encyclopedia_create(payload: EncyclopediaEntryRequest, _: None = Depends(_require_admin)):
+    try:
+        return {"code": 200, "data": encyclopedia.create_entry(payload.to_entry())}
+    except encyclopedia.EncyclopediaConflictError as exc:
+        return _encyclopedia_error(exc)
 
 
 @app.put("/api/admin/encyclopedia/{disease_id}")
-def admin_encyclopedia_update(disease_id: str, _: None = Depends(_require_admin), payload: dict = Body(...)):
-    """编辑百科词条。"""
-    import json as _json
-    if not ENCYCLOPEDIA_FILE.exists():
-        return JSONResponse(status_code=404, content={"code": 404, "message": "词条文件不存在"})
-    with ENCYCLOPEDIA_FILE.open("r", encoding="utf-8") as f:
-        diseases = _json.load(f)
-    for i, d in enumerate(diseases):
-        if d.get("id") == disease_id:
-            diseases[i].update(payload)
-            with ENCYCLOPEDIA_FILE.open("w", encoding="utf-8") as f:
-                _json.dump(diseases, f, ensure_ascii=False, indent=2)
-            return {"code": 200, "data": diseases[i]}
-    return JSONResponse(status_code=404, content={"code": 404, "message": "未找到该词条"})
+def admin_encyclopedia_update(disease_id: str, payload: EncyclopediaEntryRequest, _: None = Depends(_require_admin)):
+    try:
+        return {"code": 200, "data": encyclopedia.update_entry(disease_id, payload.to_entry())}
+    except (encyclopedia.EncyclopediaConflictError, encyclopedia.EncyclopediaNotFoundError) as exc:
+        return _encyclopedia_error(exc)
 
 
 @app.post("/api/admin/encyclopedia/{disease_id}/image")
-def admin_encyclopedia_image(disease_id: str, _: None = Depends(_require_admin), file: UploadFile = File(...)):
-    """上传百科配图。"""
-    import json as _json
-    img_dir = MODEL_DATA_DIR / "encyclopedia_images"
-    img_dir.mkdir(parents=True, exist_ok=True)
-    ext = Path(file.filename).suffix or ".jpg"
-    img_name = f"{disease_id}{ext}"
-    img_path = img_dir / img_name
-    contents = file.file.read()
-    with img_path.open("wb") as f:
-        f.write(contents)
-    url = f"/model-data/encyclopedia_images/{img_name}"
-    # 更新词条中的 image_url
-    if ENCYCLOPEDIA_FILE.exists():
-        with ENCYCLOPEDIA_FILE.open("r", encoding="utf-8") as f:
-            diseases = _json.load(f)
-        for d in diseases:
-            if d.get("id") == disease_id:
-                d["image_url"] = url
-                with ENCYCLOPEDIA_FILE.open("w", encoding="utf-8") as f:
-                    _json.dump(diseases, f, ensure_ascii=False, indent=2)
-                break
-    return {"code": 200, "data": {"image_url": url}}
+async def admin_encyclopedia_image(disease_id: str, file: UploadFile = File(...), _: None = Depends(_require_admin)):
+    existing = encyclopedia.get_detail(disease_id)
+    if existing is None:
+        return JSONResponse(status_code=404, content={"code": 404, "message": "Image is empty"})
+    if file.content_type not in ALLOWED_ENCYCLOPEDIA_MIMES:
+        return JSONResponse(status_code=400, content={"code": 400, "message": "Only JPG, PNG, and WebP images are supported"})
+    contents = await file.read(MAX_ENCYCLOPEDIA_IMAGE_BYTES + 1)
+    if len(contents) > MAX_ENCYCLOPEDIA_IMAGE_BYTES:
+        return JSONResponse(status_code=413, content={"code": 413, "message": "Image must not exceed 5MB"})
+    if not contents:
+        return JSONResponse(status_code=400, content={"code": 400, "message": "Image is empty"})
+    try:
+        with Image.open(io.BytesIO(contents)) as probe:
+            probe.verify()
+        with Image.open(io.BytesIO(contents)) as decoded:
+            if decoded.format not in {"JPEG", "PNG", "WEBP"}:
+                raise ValueError("unsupported image format")
+            if decoded.width * decoded.height > 40_000_000:
+                raise ValueError("image dimensions are too large")
+            decoded.load()
+            image = decoded.convert("RGB")
+            image.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
+            ENCYCLOPEDIA_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
+            image_path = ENCYCLOPEDIA_IMAGE_DIR / f"{disease_id}.jpg"
+            temp_path = ENCYCLOPEDIA_IMAGE_DIR / f".{disease_id}.{uuid.uuid4().hex}.tmp"
+            try:
+                image.save(temp_path, "JPEG", quality=88, optimize=True)
+                os.replace(temp_path, image_path)
+            finally:
+                temp_path.unlink(missing_ok=True)
+    except (OSError, ValueError, Image.DecompressionBombError):
+        return JSONResponse(status_code=400, content={"code": 400, "message": "Malformed image or mismatched format"})
+    url = f"{encyclopedia.MANAGED_IMAGE_URL_PREFIX}{disease_id}.jpg"
+    try:
+        updated = encyclopedia.set_image_url(disease_id, url)
+    except encyclopedia.EncyclopediaNotFoundError as exc:
+        image_path.unlink(missing_ok=True)
+        return _encyclopedia_error(exc)
+    old_url = existing.get("image_url") if existing.get("image_source") == "uploaded" else None
+    if old_url != url:
+        _delete_managed_encyclopedia_image(old_url)
+    return {"code": 200, "data": {"image_url": url, "image_source": updated["image_source"]}}
 
 
 @app.delete("/api/admin/encyclopedia/{disease_id}")
 def admin_encyclopedia_delete(disease_id: str, _: None = Depends(_require_admin)):
-    """删除百科词条。"""
-    import json as _json
-    if not ENCYCLOPEDIA_FILE.exists():
-        return JSONResponse(status_code=404, content={"code": 404, "message": "词条文件不存在"})
-    with ENCYCLOPEDIA_FILE.open("r", encoding="utf-8") as f:
-        diseases = _json.load(f)
-    diseases = [d for d in diseases if d.get("id") != disease_id]
-    with ENCYCLOPEDIA_FILE.open("w", encoding="utf-8") as f:
-        _json.dump(diseases, f, ensure_ascii=False, indent=2)
-    return {"code": 200, "message": "已删除"}
+    try:
+        removed = encyclopedia.delete_entry(disease_id)
+    except encyclopedia.EncyclopediaNotFoundError as exc:
+        return _encyclopedia_error(exc)
+    _delete_managed_encyclopedia_image(removed.get("image_url"))
+    return {"code": 200, "data": {"id": disease_id}, "message": "Deleted"}
+
+
+@app.post("/api/admin/encyclopedia/import")
+@app.post("/api/admin/encyclopedia/batch-import")
+def admin_encyclopedia_import(payload: EncyclopediaBatchImportRequest, _: None = Depends(_require_admin)):
+    validated, errors = [], []
+    for index, raw in enumerate(payload.entries):
+        try:
+            validated.append(EncyclopediaEntryRequest.model_validate(raw).to_entry())
+        except ValidationError as exc:
+            errors.append({"index": index, "errors": exc.errors(include_url=False)})
+    if errors:
+        result = {"created": 0, "updated": 0, "skipped": 0, "errors": errors, "dry_run": payload.dry_run}
+    else:
+        result = encyclopedia.batch_import(validated, dry_run=payload.dry_run, mode=payload.mode)
+    return {"code": 200, "data": result}
 
 
 # ── 用户管理 API ──────────────────────────────────────

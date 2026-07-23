@@ -139,6 +139,13 @@ export function adminConfigSystemUpdate(data) {
 }
 
 // ── 管理后台：百科管理 ──
+export function adminEncyclopediaList(params = {}) {
+  const qs = new URLSearchParams(Object.entries(params).filter(([, value]) => value !== '' && value != null)).toString();
+  return request('GET', `/api/admin/encyclopedia${qs ? '?' + qs : ''}`);
+}
+export function adminEncyclopediaDetail(id) {
+  return request('GET', `/api/admin/encyclopedia/${id}`);
+}
 export function adminEncyclopediaCreate(data) {
   return request('POST', '/api/admin/encyclopedia', data);
 }
@@ -147,6 +154,14 @@ export function adminEncyclopediaUpdate(id, data) {
 }
 export function adminEncyclopediaDelete(id) {
   return request('DELETE', `/api/admin/encyclopedia/${id}`);
+}
+export function adminEncyclopediaImage(id, file) {
+  const form = new FormData();
+  form.append('file', file);
+  return request('POST', `/api/admin/encyclopedia/${id}/image`, form);
+}
+export function adminEncyclopediaBatchImport(entries, dryRun = true) {
+  return request('POST', '/api/admin/encyclopedia/batch-import', { entries, dry_run: dryRun, mode: 'update' });
 }
 
 // ── 管理后台：用户管理 ──

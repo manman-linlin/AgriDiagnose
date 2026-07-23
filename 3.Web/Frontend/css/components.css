@@ -958,34 +958,6 @@ img.upload-preview {
 .page-button.page-nav { min-width: 64px; }
 .page-summary { margin-left: 6px; color: var(--color-text-hint); font-size: var(--font-size-sm); }
 
-.encyclopedia-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-top: var(--space-lg);
-  flex-wrap: wrap;
-}
-.page-button {
-  min-width: 36px;
-  height: 36px;
-  padding: 0 10px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  color: var(--color-text-secondary);
-  background: var(--color-card);
-  cursor: pointer;
-  transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
-}
-.page-button:hover:not(:disabled), .page-button.active {
-  color: #fff;
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-}
-.page-button:disabled { opacity: 0.4; cursor: not-allowed; }
-.page-button.page-nav { min-width: 64px; }
-.page-summary { margin-left: 6px; color: var(--color-text-hint); font-size: var(--font-size-sm); }
-
 .disease-card .disease-link {
   display: inline-flex; align-items: center; gap: 4px;
   margin-top: 10px;
@@ -994,6 +966,45 @@ img.upload-preview {
   font-weight: 600;
 }
 
+/* 百科管理与详情增强 */
+.admin-encyclopedia-actions, .admin-entry-tags, .admin-entry-buttons, .modal-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.admin-encyclopedia-toolbar .form-select { width: 140px; height: var(--input-height); }
+.admin-list-summary { margin: -4px 0 var(--space-md); color: var(--color-text-hint); font-size: var(--font-size-sm); }
+.admin-encyclopedia-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-md); }
+.admin-encyclopedia-card { padding: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.admin-entry-main { flex: 1; min-width: 0; }
+.admin-entry-title { font-weight: 700; overflow-wrap: anywhere; }
+.admin-entry-title span { color: var(--color-text-hint); font-size: var(--font-size-xs); font-weight: 400; }
+.admin-entry-tags { margin-top: 8px; }
+.tag-linked { color: var(--color-primary-dark); background: var(--color-primary-bg); }
+.tag-unlinked { color: var(--color-text-hint); background: var(--color-bg); }
+.admin-class-label { display: block; margin-top: 8px; color: var(--color-text-hint); font-size: 11px; white-space: normal; overflow-wrap: anywhere; }
+.encyclopedia-form-dialog { width: min(760px, calc(100vw - 32px)); max-height: 90vh; overflow-y: auto; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+.dynamic-label { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.dynamic-row, .source-editor { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+.source-editor { display: grid; grid-template-columns: 1fr 1fr 1.4fr auto; }
+.remove-row { color: var(--color-error); flex-shrink: 0; }
+.form-error, .inline-error { color: var(--color-error); font-size: var(--font-size-xs); }
+.form-help { color: var(--color-text-hint); font-size: var(--font-size-xs); }
+.admin-image-preview { position: relative; max-width: 420px; margin-top: 10px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--color-border-light); }
+.admin-image-preview img { display: block; width: 100%; max-height: 220px; object-fit: cover; }
+.admin-image-preview span { position: absolute; right: 8px; bottom: 8px; padding: 3px 7px; border-radius: 4px; background: rgba(15,23,42,.7); color: #fff; font-size: 11px; }
+.modal-actions { margin-top: 16px; }
+.modal-actions.centered { justify-content: center; }
+.confirm-dialog { width: min(380px, calc(100vw - 32px)); }
+.import-dialog { width: min(620px, calc(100vw - 32px)); }
+.import-summary { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 14px; padding: 12px; border-radius: var(--radius-md); background: var(--color-bg); }
+.import-summary strong { flex-basis: 100%; }
+.import-summary.success { background: var(--color-primary-bg); }
+.import-summary ul { width: 100%; max-height: 140px; overflow: auto; margin: 0; padding-left: 20px; color: var(--color-error); font-size: var(--font-size-xs); }
+.encyclopedia-detail-section { padding: 18px; margin-top: 12px; }
+.detail-section-title { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 600; }
+.detail-section-text { color: var(--color-text-secondary); font-size: var(--font-size-md); line-height: 1.8; white-space: pre-line; }
+.encyclopedia-source-list { margin: 0; padding-left: 20px; font-size: var(--font-size-sm); }
+.encyclopedia-source-list li { margin-bottom: 7px; overflow-wrap: anywhere; }
+.encyclopedia-source-list a { color: var(--color-primary); }
+.encyclopedia-source-list small { display: block; color: var(--color-text-hint); }
 /* ══════════════════════════════════════════════════════════════
    历史记录
    ══════════════════════════════════════════════════════════════ */
