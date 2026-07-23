@@ -173,12 +173,11 @@ export default {
       hoverPreview.value.show = false;
     }
 
-    /** 百科跳转 */
+    /** 跳转到百科并自动打开对应病害详情 */
     function openEncyclopedia(enClass) {
       if (!enClass) return;
-      const cls = CLASS_MAP[enClass];
-      const label = cls ? cls.cn : enClass;
-      window.open('#/encyclopedia?q=' + encodeURIComponent(label), '_blank');
+      sessionStorage.setItem('encyclopedia_focus', enClass);
+      location.hash = '#/encyclopedia';
     }
 
     /** Lightbox */

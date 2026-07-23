@@ -173,6 +173,16 @@ export default {
     loadDiseases();
     loadCrops();
 
+    // 从审核页跳转过来时自动打开对应病害详情
+    (async () => {
+      const focusClass = sessionStorage.getItem('encyclopedia_focus');
+      if (!focusClass) return;
+      sessionStorage.removeItem('encyclopedia_focus');
+      await loadDiseases();
+      const target = diseases.value.find(d => d.class_en === focusClass);
+      if (target) openDetail(target);
+    })();
+
     return {
       searchQuery, selectedCrop, selectedCategory, drawOpen, drawDisease,
       crops, categories, diseases, loading, error, filteredDiseases, paginatedDiseases,
