@@ -334,6 +334,12 @@ class AdminReviewRequest(BaseModel):
     notes: str = ""
 
 
+class BatchReviewRequest(BaseModel):
+    ids: list[str] = []
+    approved: bool = False
+    notes: str = ""
+
+
 # ── 管理员认证 ────────────────────────────────────────
 class EncyclopediaSourceRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
@@ -492,6 +498,19 @@ def admin_logout(authorization: str = Header("")):
     return {"code": 200, "message": "已退出"}
 
 
+@app.post("/api/admin/review/batch")
+def admin_review_batch(
+    _: None = Depends(_require_admin),
+    payload: BatchReviewRequest = Body(...),
+):
+    """批量审核贡献记录（必须在单个 review 路由之前注册）。"""
+    success = 0
+    for cid in payload.ids:
+        if collector_service.review(cid, payload.approved, payload.notes):
+            success += 1
+    return {"code": 200, "message": f"已处理 {success}/{len(payload.ids)} 条"}
+
+
 @app.post("/api/admin/review/{contribution_id}")
 def admin_review(
     contribution_id: str,
@@ -517,25 +536,6 @@ def admin_contributions(
         return {"code": 200, "data": records, "total": len(records)}
     except Exception as e:
         return JSONResponse(status_code=500, content={"code": 500, "message": f"获取失败: {str(e)}"})
-
-
-# ── 批量审核 ──────────────────────────────────────────
-class BatchReviewRequest(BaseModel):
-    ids: list[str] = []
-    approved: bool = False
-    notes: str = ""
-
-@app.post("/api/admin/review/batch")
-def admin_review_batch(
-    _: None = Depends(_require_admin),
-    payload: BatchReviewRequest = Body(...),
-):
-    """批量审核贡献记录。"""
-    success = 0
-    for cid in payload.ids:
-        if collector_service.review(cid, payload.approved, payload.notes):
-            success += 1
-    return {"code": 200, "message": f"已处理 {success}/{len(payload.ids)} 条"}
 
 
 # ── 仪表盘 API ────────────────────────────────────────
