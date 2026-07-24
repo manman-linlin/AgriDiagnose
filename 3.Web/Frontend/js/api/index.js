@@ -164,31 +164,3 @@ export function adminEncyclopediaBatchImport(entries, dryRun = true) {
   return request('POST', '/api/admin/encyclopedia/batch-import', { entries, dry_run: dryRun, mode: 'update' });
 }
 
-// ── 管理后台：用户管理 ──
-export function adminUsersList(params) {
-  const qs = new URLSearchParams(params || {}).toString();
-  return request('GET', `/api/admin/users?${qs}`);
-}
-export function adminUsersUpdate(id, data) {
-  return request('PUT', `/api/admin/users/${id}`, data);
-}
-
-// ── 用户系统 ──
-export function authRegister(data) {
-  return request('POST', '/api/auth/register', data, true);
-}
-export function authLogin(data) {
-  return request('POST', '/api/auth/login', data, true);
-}
-export function authLogout() {
-  return request('POST', '/api/auth/logout', null);
-}
-export function authProfile() {
-  return request('GET', '/api/auth/profile');
-}
-export function authProfileUpdate(data) {
-  return request('PUT', '/api/auth/profile', data);
-}
-export function authProfileStats() {
-  return request('GET', '/api/auth/profile/stats');
-}

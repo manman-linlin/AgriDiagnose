@@ -40,12 +40,16 @@ export const useAdminStore = defineStore('admin', () => {
   }
 
   async function login() {
-    const ui = useUiStore();
-    const pwd = state.loginPassword;
-    if (!pwd) {
+    if (!state.loginPassword) {
       state.loginError = '请输入密码';
       return;
     }
+    await loginWithPassword(state.loginPassword);
+  }
+
+  /** 直接用密码登录（供 AdminLayout 内嵌登录表单使用） */
+  async function loginWithPassword(pwd) {
+    const ui = useUiStore();
     state.loginLoading = true;
     state.loginError = '';
     try {
@@ -61,6 +65,7 @@ export const useAdminStore = defineStore('admin', () => {
       location.hash = '#/admin/dashboard';
     } catch (e) {
       state.loginError = e.message || '登录失败';
+      throw e;
     } finally {
       state.loginLoading = false;
     }
@@ -87,5 +92,5 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
-  return { state, restoreSession, login, logout, toggleLoginModal };
+  return { state, restoreSession, login, loginWithPassword, logout, toggleLoginModal };
 });

@@ -1,6 +1,8 @@
 /**
  * 管理后台布局容器 — 固定全视口覆盖层
  * 独立侧边栏(200px) + 内容区，完全覆盖主应用布局
+ *
+ * 鉴权：未登录时展示登录卡片，登录成功后才显示管理界面。
  */
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { ADMIN_PAGES, navigateToAdmin } from '../../router/index.js';
@@ -16,7 +18,6 @@ import ReviewPage from './review/page.js';
 import ModelPage from './model/page.js?v=model-admin-20260723-3';
 import SettingsPage from './settings/page.js';
 import EncyclopediaPage from './encyclopedia/page.js';
-import UsersPage from './users/page.js';
 import LogsPage from './logs/page.js';
 
 const SUB_PAGES = {
@@ -25,7 +26,6 @@ const SUB_PAGES = {
   model:        ModelPage,
   settings:     SettingsPage,
   encyclopedia: EncyclopediaPage,
-  users:        UsersPage,
   logs:         LogsPage,
 };
 
@@ -46,6 +46,10 @@ export default {
     const sidebarOpen = ref(false);
     const pendingCount = ref(0);
     const showNotifications = ref(false);
+    /** 管理后台内嵌登录表单状态 */
+    const loginPassword = ref('');
+    const loginError = ref('');
+    const loginLoading = ref(false);
     let pollTimer = null;
 
     const unreadCount = computed(() => ui.notifications.filter(n => !n.read).length);
@@ -72,6 +76,25 @@ export default {
       }
     }
 
+    /** 内嵌登录：复用 admin store 的 login 逻辑，但不依赖其 showLoginModal */
+    async function doLogin() {
+      const pwd = loginPassword.value;
+      if (!pwd) {
+        loginError.value = '请输入密码';
+        return;
+      }
+      loginLoading.value = true;
+      loginError.value = '';
+      try {
+        await admin.loginWithPassword(pwd);
+        loginPassword.value = '';
+      } catch (e) {
+        loginError.value = e.message || '登录失败';
+      } finally {
+        loginLoading.value = false;
+      }
+    }
+
     async function loadPendingCount() {
       try {
         const stats = await getContributeStats();
@@ -86,8 +109,21 @@ export default {
       window.addEventListener('hashchange', syncFromHash);
       document.addEventListener('click', onDocClick);
       ui.restoreNotifications();
-      loadPendingCount();
-      pollTimer = setInterval(loadPendingCount, 30000);
+      // 仅登录后才加载待审核数，避免未登录时 401 刷屏
+      if (admin.state.loggedIn) {
+        loadPendingCount();
+        pollTimer = setInterval(loadPendingCount, 30000);
+      }
+    });
+
+    // 登录态变化后启动/停止轮询
+    watch(() => admin.state.loggedIn, (val) => {
+      if (val) {
+        loadPendingCount();
+        pollTimer = setInterval(loadPendingCount, 30000);
+      } else {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+      }
     });
 
     onBeforeUnmount(() => {
@@ -101,6 +137,7 @@ export default {
     return {
       admin, ui, subPage, sidebarOpen, pendingCount, showNotifications, unreadCount,
       currentSub, currentTitle,
+      loginPassword, loginError, loginLoading, doLogin,
       goBack, selectSub, ADMIN_PAGES,
       markAllRead, clearNotifications, toggleNotifications,
       toggleSidebar() { sidebarOpen.value = !sidebarOpen.value; },
@@ -108,7 +145,48 @@ export default {
     };
   },
   template: `
-    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:250;display:grid;grid-template-columns:200px 1fr;grid-template-rows:56px 1fr;background:var(--color-page-bg);">
+    <!-- ═══════════ 未登录：居中登录卡片 ═══════════ -->
+    <div v-if="!admin.state.loggedIn" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:250;display:flex;align-items:center;justify-content:center;background:var(--color-page-bg);">
+      <div style="width:400px;max-width:90vw;background:var(--color-card);border-radius:12px;box-shadow:var(--shadow-lg);padding:40px 32px;">
+        <div style="text-align:center;margin-bottom:28px;">
+          <div style="width:64px;height:64px;margin:0 auto 16px;background:var(--color-primary-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+            <app-icon name="lock" :size="28" style="color:var(--color-primary);"></app-icon>
+          </div>
+          <h2 style="margin:0 0 8px;font-size:20px;color:var(--color-text-primary);">管理员登录</h2>
+          <p style="margin:0;font-size:14px;color:var(--color-text-hint);">请输入管理员密码以进入后台</p>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">密码</label>
+          <input
+            type="password"
+            class="form-input"
+            v-model="loginPassword"
+            placeholder="请输入管理员密码"
+            @keyup.enter="doLogin"
+            autofocus
+            style="width:100%;"
+          />
+        </div>
+        <div v-if="loginError" style="margin-bottom:12px;display:flex;align-items:center;gap:4px;color:var(--color-error);font-size:13px;">
+          <app-icon name="alert-triangle" :size="14"></app-icon> {{ loginError }}
+        </div>
+        <button
+          class="btn btn-primary btn-block"
+          :disabled="loginLoading"
+          @click="doLogin"
+          style="width:100%;"
+        >
+          <app-icon v-if="!loginLoading" name="key" :size="16"></app-icon>
+          {{ loginLoading ? '登录中...' : '登录' }}
+        </button>
+        <button class="btn btn-sm btn-outline" @click="goBack" style="width:100%;margin-top:12px;">
+          <app-icon name="chevron-down" :size="14" style="transform:rotate(90deg);"></app-icon> 返回前台
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══════════ 已登录：完整管理后台布局 ═══════════ -->
+    <div v-else style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:250;display:grid;grid-template-columns:200px 1fr;grid-template-rows:56px 1fr;background:var(--color-page-bg);">
       <!-- 网络离线横幅 -->
       <div v-if="ui.system.offline" style="position:fixed;top:56px;left:0;right:0;z-index:260;height:32px;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--color-warning-bg);color:var(--color-warning);font-size:13px;font-weight:500;">
         <app-icon name="alert-triangle" :size="14"></app-icon> 网络连接已断开，部分功能不可用

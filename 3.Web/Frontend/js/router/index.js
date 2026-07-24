@@ -21,7 +21,6 @@ export const ADMIN_PAGES = {
   model:        { title: '模型管理',  icon: 'cpu' },
   settings:     { title: '系统配置',  icon: 'settings' },
   encyclopedia: { title: '百科管理',  icon: 'book-open' },
-  users:        { title: '用户管理',  icon: 'users' },
   logs:         { title: '系统日志',  icon: 'terminal' },
 };
 
