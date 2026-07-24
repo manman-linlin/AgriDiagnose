@@ -2,7 +2,7 @@
  * 数据贡献页面
  * 用户上传标注图片，扩展训练数据集
  */
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useDiagnosisStore } from '../../stores/diagnosis.js';
 import { useAdminStore } from '../../stores/admin.js';
 import { useContributeStore } from '../../stores/contribute.js';
@@ -58,6 +58,15 @@ export default {
     const reviewSubmitting = ref(false);
 
     const multiInput = ref(null);
+    const classPickerRef = ref(null);
+
+    function onDocumentClick(e) {
+      if (classPickerRef.value && !classPickerRef.value.contains(e.target)) {
+        classPickerOpen.value = false;
+      }
+    }
+    onMounted(() => document.addEventListener('click', onDocumentClick));
+    onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick));
 
     const classList = computed(() => contributeStore.state.classList);
     const isAdmin = computed(() => admin.state.loggedIn);
@@ -318,7 +327,7 @@ export default {
       location, photoDate, notes, submitting, submitSuccess,
       filteredClasses, classSearch, classPickerOpen, records, stats, recordsLoading, statsLoading,
       errors, recordFilter, reviewTarget, reviewAction, reviewNotes, reviewSubmitting,
-      multiInput, isAdmin, canSubmit, selectedClassLabel, statusLabel, statusIcon, modeLabel,
+      multiInput, classPickerRef, isAdmin, canSubmit, selectedClassLabel, statusLabel, statusIcon, modeLabel,
       selectMode, goNext, goBack, onAddImages, removeImage, validateField, submit,
       filterRecords, openReview, cancelReview, submitReview, onClassSearch,
       selectDiseaseClass, openClassPicker, clearSelectedClass,
@@ -409,7 +418,7 @@ export default {
               <div v-if="mode === 'extend'">
                 <div class="form-group">
                   <label class="form-label">选择病害类别</label>
-                  <div class="class-picker">
+                  <div class="class-picker" ref="classPickerRef">
                     <div class="class-picker-input-row">
                       <input
                         class="form-input"
@@ -438,7 +447,7 @@ export default {
                         class="class-picker-item"
                         :class="{ active: selectedClass === c.en }"
                         role="option"
-                        @click="selectDiseaseClass(c)"
+                        @mousedown.prevent="selectDiseaseClass(c)"
                       >
                         <span class="class-picker-crop">{{ c.crop }}</span>
                         <span class="class-picker-name">{{ c.cn }}</span>
