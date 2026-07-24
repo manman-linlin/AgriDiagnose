@@ -173,14 +173,23 @@ export default {
     loadDiseases();
     loadCrops();
 
-    // 从审核页跳转过来时自动打开对应病害详情
+    // 从诊断结果 / 审核页跳转时，自动打开置信度最高对应病害详情
     (async () => {
-      const focusClass = sessionStorage.getItem('encyclopedia_focus');
-      if (!focusClass) return;
+      const focus = sessionStorage.getItem('encyclopedia_focus');
+      if (!focus) return;
       sessionStorage.removeItem('encyclopedia_focus');
       await loadDiseases();
-      const target = diseases.value.find(d => d.class_en === focusClass);
-      if (target) openDetail(target);
+      const key = String(focus).trim().toLowerCase();
+      const target = diseases.value.find(d =>
+        String(d.class_en || '').toLowerCase() === key
+        || String(d.name_cn || '').toLowerCase() === key
+        || String(d.id || '').toLowerCase() === key
+        || String(d.name_en || '').toLowerCase() === key
+      );
+      if (!target) return;
+      if (target.crop_cn) selectedCrop.value = target.crop_cn;
+      currentPage.value = 1;
+      openDetail(target);
     })();
 
     return {

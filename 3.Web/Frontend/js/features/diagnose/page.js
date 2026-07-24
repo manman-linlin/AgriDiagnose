@@ -71,7 +71,12 @@ export default {
 
     function goChat()         { navigate('chat'); }
     function goContribute()   { navigate('contribute'); }
-    function goEncyclopedia() { navigate('encyclopedia'); }
+    function goEncyclopedia() {
+      const top1 = result.value?.top1;
+      const focus = top1?.label_en || top1?.label_cn || '';
+      if (focus) sessionStorage.setItem('encyclopedia_focus', focus);
+      navigate('encyclopedia');
+    }
     function goHistory()      { navigate('history'); }
 
     function resetDiagnosis() {

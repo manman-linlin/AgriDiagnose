@@ -42,6 +42,7 @@ export default {
 
     const filteredClasses = ref([]);
     const classSearch = ref('');
+    const classPickerOpen = ref(false);
     const records = ref([]);
     const stats = ref(null);
     const recordsLoading = ref(true);
@@ -123,6 +124,7 @@ export default {
     // ── 类别搜索过滤 ──────────────────────────────
     function onClassSearch() {
       const q = classSearch.value.trim().toLowerCase();
+      classPickerOpen.value = true;
       if (!q) {
         filteredClasses.value = classList.value;
         return;
@@ -134,15 +136,43 @@ export default {
       );
     }
 
+    function selectDiseaseClass(item) {
+      selectedClass.value = item.en;
+      classSearch.value = `${item.crop} — ${item.cn}`;
+      classPickerOpen.value = false;
+      validateField('selectedClass', selectedClass.value);
+    }
+
+    function openClassPicker() {
+      if (!filteredClasses.value.length) filteredClasses.value = classList.value;
+      classPickerOpen.value = true;
+    }
+
+    function clearSelectedClass() {
+      selectedClass.value = '';
+      classSearch.value = '';
+      filteredClasses.value = classList.value;
+      classPickerOpen.value = true;
+      validateField('selectedClass', '');
+    }
+
     // ── 步骤控制 ──────────────────────────────────
     function selectMode(m) {
       mode.value = m;
       Object.keys(errors).forEach(k => delete errors[k]);
       classSearch.value = '';
+      selectedClass.value = '';
+      classPickerOpen.value = false;
       filteredClasses.value = classList.value;
     }
-    function goNext() { step.value = 1; }
-    function goBack() { step.value = 0; }
+    function goNext() {
+      step.value = 1;
+      if (mode.value === 'extend') {
+        if (!filteredClasses.value.length) filteredClasses.value = classList.value;
+        classPickerOpen.value = true;
+      }
+    }
+    function goBack() { step.value = 0; classPickerOpen.value = false; }
 
     // ── 图片上传 ──────────────────────────────────
     function onAddImages(e) {
@@ -221,6 +251,7 @@ export default {
           Object.keys(errors).forEach(k => delete errors[k]);
           classSearch.value = '';
           filteredClasses.value = classList.value;
+          classPickerOpen.value = false;
           step.value = 0;
           submitSuccess.value = false;
         }, 1500);
@@ -269,19 +300,28 @@ export default {
     // ── 初始化：如果从诊断页跳来，预填病害类别 ──
     if (diagnosisStore.state.status === 'done' && diagnosisStore.state.result) {
       mode.value = 'extend';
-      selectedClass.value = diagnosisStore.state.result.top1.label_en;
+      const top1 = diagnosisStore.state.result.top1 || {};
+      selectedClass.value = top1.label_en || '';
+      if (selectedClass.value) {
+        classSearch.value = `${top1.crop || ''} — ${top1.label_cn || top1.disease || selectedClass.value}`.replace(/^ — /, '');
+      }
     }
-    loadClasses();
+    loadClasses().then(() => {
+      if (!selectedClass.value) return;
+      const found = classList.value.find(c => c.en === selectedClass.value);
+      if (found) classSearch.value = `${found.crop} — ${found.cn}`;
+    });
     loadData();
 
     return {
       step, mode, images, selectedClass, cropName, diseaseName, diseaseDesc,
       location, photoDate, notes, submitting, submitSuccess,
-      filteredClasses, classSearch, records, stats, recordsLoading, statsLoading,
+      filteredClasses, classSearch, classPickerOpen, records, stats, recordsLoading, statsLoading,
       errors, recordFilter, reviewTarget, reviewAction, reviewNotes, reviewSubmitting,
       multiInput, isAdmin, canSubmit, selectedClassLabel, statusLabel, statusIcon, modeLabel,
       selectMode, goNext, goBack, onAddImages, removeImage, validateField, submit,
       filterRecords, openReview, cancelReview, submitReview, onClassSearch,
+      selectDiseaseClass, openClassPicker, clearSelectedClass,
     };
   },
   template: `
@@ -369,29 +409,46 @@ export default {
               <div v-if="mode === 'extend'">
                 <div class="form-group">
                   <label class="form-label">选择病害类别</label>
-                  <!-- 搜索输入框 -->
-                  <input
-                    class="form-input"
-                    v-model="classSearch"
-                    @input="onClassSearch"
-                    placeholder="搜索病害（输入关键词过滤）..."
-                    style="margin-bottom:8px;"
-                  />
-                  <select
-                    class="form-select"
-                    :class="{ error: errors.selectedClass }"
-                    v-model="selectedClass"
-                    @change="validateField('selectedClass', selectedClass)"
-                    size="8"
-                  >
-                    <option value="">— 请选择病害类别 —</option>
-                    <option v-for="c in filteredClasses" :key="c.en" :value="c.en">
-                      {{ c.crop }} — {{ c.cn }}
-                    </option>
-                  </select>
+                  <div class="class-picker">
+                    <div class="class-picker-input-row">
+                      <input
+                        class="form-input"
+                        :class="{ error: errors.selectedClass }"
+                        v-model="classSearch"
+                        @input="onClassSearch"
+                        @focus="openClassPicker"
+                        placeholder="搜索或点击下方列表选择病害..."
+                        autocomplete="off"
+                      />
+                      <button
+                        v-if="selectedClass"
+                        type="button"
+                        class="btn btn-sm btn-ghost class-picker-clear"
+                        @click="clearSelectedClass"
+                      >清除</button>
+                    </div>
+                    <div v-if="selectedClass" class="class-picker-selected">
+                      已选择：{{ selectedClassLabel }}
+                    </div>
+                    <div v-if="classPickerOpen" class="class-picker-list" role="listbox">
+                      <button
+                        v-for="c in filteredClasses"
+                        :key="c.en"
+                        type="button"
+                        class="class-picker-item"
+                        :class="{ active: selectedClass === c.en }"
+                        role="option"
+                        @click="selectDiseaseClass(c)"
+                      >
+                        <span class="class-picker-crop">{{ c.crop }}</span>
+                        <span class="class-picker-name">{{ c.cn }}</span>
+                      </button>
+                      <div v-if="!filteredClasses.length" class="class-picker-empty">没有匹配的病害类别</div>
+                    </div>
+                  </div>
                   <div v-if="errors.selectedClass" class="form-error-msg">{{ errors.selectedClass }}</div>
                   <div style="font-size:12px;color:var(--color-text-muted, #999);margin-top:4px;">
-                    共 {{ filteredClasses.length }} 个匹配类别
+                    共 {{ filteredClasses.length }} 个匹配类别，点击即可选中
                   </div>
                 </div>
               </div>

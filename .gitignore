@@ -35,3 +35,6 @@ Thumbs.db
 
 # 管理后台系统配置（含 LLM API Key 明文，不入库）
 3.Web/Backend/app/data/config.json
+
+# 本地答辩 PPT（不入库）
+外部ppt/
