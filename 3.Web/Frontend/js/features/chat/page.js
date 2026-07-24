@@ -67,7 +67,7 @@ export default {
 
     // ── AI 纠错状态：对照模型判断 + Agent 视觉复核给出四态展示 ──
     const reviewInfo = computed(() => {
-      const msg = messages.value.find(m => m.role === 'assistant' && m.review);
+      const msg = [...messages.value].reverse().find(m => m.role === 'assistant' && m.review);
       if (!msg) return null;
       const review = msg.review;
       const conf = diagnosis.value?.top1?.confidence ?? 0;
