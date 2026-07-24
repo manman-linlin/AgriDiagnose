@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "4d2925db9cc6",
+    "mode": "extend",
+    "submit_time": "2026-07-24 00:09:32",
+    "status": "approved",
+    "existing_class": "Apple___Apple_scab",
+    "crop_name": "",
+    "disease_name": "",
+    "disease_description": "",
+    "image_count": 1,
+    "image_paths": [
+      "Data/contributed/extend/Apple___Apple_scab/ext_Appl_Apple_scab_20260724_000932_001.jpg"
+    ],
+    "location": "",
+    "photo_date": "",
+    "notes": "",
+    "review_notes": ""
+  }
+]
