@@ -29,7 +29,7 @@ LLM_BASE_URL = os.getenv(
 # 低于该置信度（百分比）时，要求 Agent 提示"仅供参考 / 建议人工复核"
 CONFIDENCE_THRESHOLD = float(os.getenv("AGENT_CONFIDENCE_THRESHOLD", "80"))
 
-REQUEST_TIMEOUT = float(os.getenv("AGENT_REQUEST_TIMEOUT", "30"))
+REQUEST_TIMEOUT = float(os.getenv("AGENT_REQUEST_TIMEOUT", "90"))
 
 # 单次对话保留的历史轮数上限（防止 token 无限增长）
 MAX_HISTORY_TURNS = int(os.getenv("AGENT_MAX_HISTORY_TURNS", "10"))
